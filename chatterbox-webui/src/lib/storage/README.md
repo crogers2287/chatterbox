@@ -443,6 +443,74 @@ cd chatterbox-webui
 npm test src/lib/storage
 ```
 
+## Recovery-Specific Features
+
+The storage layer includes specialized recovery utilities for session persistence:
+
+```typescript
+import { recoveryStorage, RecoveryUtils } from '@/lib/storage';
+
+// Save a session for recovery
+const session = RecoveryUtils.createSession(
+  'session-123',
+  'Hello world, this is a test.',
+  { temperature: 0.8, speed: 1.0 },
+  [],
+  'voice-id-456'
+);
+
+await recoveryStorage.saveSession(session);
+
+// Retrieve active session
+const activeSession = await recoveryStorage.getActiveSession();
+
+// Check if recovery is available
+const canRecover = await recoveryStorage.isRecoveryAvailable();
+
+// Get recovery statistics
+const stats = await recoveryStorage.getRecoveryStats();
+console.log(`${stats.totalSessions} sessions available for recovery`);
+```
+
+### Session Recovery Features
+
+- **Automatic Session Persistence**: Sessions are saved with full context
+- **Active Session Tracking**: Maintains current working session
+- **Progressive Recovery**: Tracks completion status of audio chunks
+- **Session Cleanup**: Automatically removes old sessions (keeps 10 most recent)
+- **Export/Import**: Backup and restore session data
+- **Recovery Statistics**: Monitor storage usage and session counts
+
+### Recovery Session Structure
+
+```typescript
+interface RecoverySession {
+  id: string;
+  timestamp: number;
+  text: string;
+  parameters: {
+    voice?: string;
+    temperature: number;
+    speed: number;
+  };
+  voiceId?: string;
+  audioChunks: Array<{
+    id: string;
+    text: string;
+    audioUrl?: string;
+    audioData?: string;
+    status: 'pending' | 'generating' | 'completed' | 'error';
+    duration?: number;
+  }>;
+  metadata?: {
+    userAgent?: string;
+    createdAt: number;
+    lastUpdated: number;
+    version: string;
+  };
+}
+```
+
 ## License
 
 Part of the Chatterbox TTS project. See the main project license for details.
