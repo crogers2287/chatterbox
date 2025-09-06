@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Domain Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f0f0f0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre {
+            background: #fff;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox Domain Connection Test</h1>
+    
+    <div class="test info">
+        <h3>Current Location</h3>
+        <pre id="location"></pre>
+    </div>
+    
+    <div class="test" id="apiTest">
+        <h3>API Connection Test</h3>
+        <p>Testing connection to backend...</p>
+        <pre id="apiResult"></pre>
+    </div>
+    
+    <div class="test" id="corsTest">
+        <h3>CORS Test</h3>
+        <p>Testing cross-origin requests...</p>
+        <pre id="corsResult"></pre>
+    </div>
+
+    <script>
+        // Show current location info
+        document.getElementById('location').textContent = JSON.stringify({
+            hostname: window.location.hostname,
+            port: window.location.port,
+            protocol: window.location.protocol,
+            href: window.location.href
+        }, null, 2);
+
+        // Determine API URL based on hostname
+        const API_URL = window.location.hostname === 'chatter.skinnyc.pro' 
+            ? 'http://chatter.skinnyc.pro:6095'
+            : 'http://fred.taile5e8a3.ts.net:6095';
+
+        console.log('Using API URL:', API_URL);
+
+        // Test API connection
+        async function testAPI() {
+            const testDiv = document.getElementById('apiTest');
+            const resultDiv = document.getElementById('apiResult');
+            
+            try {
+                console.log('Testing health endpoint...');
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                testDiv.className = 'test success';
+                resultDiv.textContent = JSON.stringify({
+                    status: 'Connected',
+                    apiUrl: API_URL,
+                    response: data
+                }, null, 2);
+            } catch (error) {
+                testDiv.className = 'test error';
+                resultDiv.textContent = JSON.stringify({
+                    status: 'Failed',
+                    apiUrl: API_URL,
+                    error: error.message,
+                    details: error.stack
+                }, null, 2);
+            }
+        }
+
+        // Test CORS
+        async function testCORS() {
+            const testDiv = document.getElementById('corsTest');
+            const resultDiv = document.getElementById('corsResult');
+            
+            try {
+                console.log('Testing CORS with synthesize endpoint...');
+                const response = await fetch(`${API_URL}/synthesize-json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'Test',
+                        temperature: 0.8
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    testDiv.className = 'test success';
+                    resultDiv.textContent = JSON.stringify({
+                        status: 'CORS working',
+                        headers: Object.fromEntries(response.headers.entries()),
+                        audioUrl: data.audio_url
+                    }, null, 2);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                testDiv.className = 'test error';
+                resultDiv.textContent = JSON.stringify({
+                    status: 'CORS failed',
+                    error: error.message,
+                    suggestion: 'Check browser console for more details'
+                }, null, 2);
+            }
+        }
+
+        // Run tests
+        testAPI();
+        testCORS();
+    </script>
+</body>
+</html>

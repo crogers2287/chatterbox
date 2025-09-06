@@ -1,0 +1,36 @@
+[Unit]
+Description=Chatterbox TTS WebUI (Production)
+Documentation=https://github.com/resemble-ai/chatterbox
+After=network.target chatterbox-tts.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=crogers2287
+Group=crogers2287
+WorkingDirectory=/home/crogers2287/chatterbox/chatterbox-webui
+
+# Environment
+Environment="NODE_ENV=production"
+Environment="PATH=/usr/bin:/bin:/usr/local/bin"
+
+# Build the app first, then serve it
+ExecStartPre=/usr/bin/npm install --silent
+ExecStartPre=/usr/bin/npm run build
+ExecStart=/usr/bin/npx serve -s dist -l 5173
+
+# Service management
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterbox-webui
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

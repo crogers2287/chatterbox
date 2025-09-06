@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Recovery & Export Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-box {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .chunk {
+            margin: 15px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .success { 
+            background: #d4edda; 
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error { 
+            background: #f8d7da; 
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .audio-player {
+            margin: 10px 0;
+            width: 100%;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0;
+            transition: width 0.3s;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Audio Recovery & Export Tool</h1>
+        <div class="status-box">
+            <strong>Purpose:</strong> This tool helps recover and export your generated audio from localStorage, 
+            and can attempt to re-download missing files from the server if they're still available.
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalChunks">0</div>
+                <div class="stat-label">Total Chunks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="recoveredCount">0</div>
+                <div class="stat-label">Recovered Audio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="missingCount">0</div>
+                <div class="stat-label">Missing Audio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button onclick="scanLocalStorage()">📋 Scan LocalStorage</button>
+            <button onclick="attemptRecovery()">🔄 Attempt Recovery</button>
+            <button onclick="downloadAll()">💾 Download All Audio</button>
+            <button onclick="exportSession()">📦 Export Full Session</button>
+            <button onclick="clearCompleted()">🗑️ Clear Completed</button>
+        </div>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="status"></div>
+        <div id="chunks"></div>
+    </div>
+
+    <script>
+        let audioBlobs = [];
+        let missingAudioUrls = [];
+        const API_BASE_URL = 'http://fred.taile5e8a3.ts.net:6095';
+        
+        function updateStats() {
+            const chunks = JSON.parse(localStorage.getItem('chunks') || '[]');
+            document.getElementById('totalChunks').textContent = chunks.length;
+            document.getElementById('recoveredCount').textContent = audioBlobs.length;
+            document.getElementById('missingCount').textContent = missingAudioUrls.length;
+            
+            const errorCount = chunks.filter(c => c.status === 'error').length;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+        
+        function log(msg, type = 'info') {
+            const status = document.getElementById('status');
+            const className = type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success';
+            status.innerHTML = `<div class="${className}">${msg}</div>`;
+        }
+        
+        function showProgress(current, total) {
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            progress.style.display = 'block';
+            progressBar.style.width = `${(current / total) * 100}%`;
+        }
+        
+        async function scanLocalStorage() {
+            const chunksDiv = document.getElementById('chunks');
+            chunksDiv.innerHTML = '';
+            audioBlobs = [];
+            missingAudioUrls = [];
+            
+            const chunksData = localStorage.getItem('chunks');
+            if (!chunksData) {
+                log('No chunks found in localStorage!', 'error');
+                updateStats();
+                return;
+            }
+            
+            const chunks = JSON.parse(chunksData);
+            log(`Found ${chunks.length} chunks in localStorage`);
+            
+            for (let i = 0; i < chunks.length; i++) {
+                showProgress(i + 1, chunks.length);
+                const chunk = chunks[i];
+                const chunkDiv = document.createElement('div');
+                chunkDiv.className = 'chunk';
+                chunkDiv.id = `chunk-${i}`;
+                
+                let html = `<h3>Chunk ${i + 1}</h3>`;
+                html += `<p><strong>Text:</strong> ${chunk.text.substring(0, 100)}...</p>`;
+                html += `<p><strong>Status:</strong> <span class="${chunk.status === 'completed' ? 'success' : chunk.status === 'error' ? 'error' : 'warning'}">${chunk.status}</span></p>`;
+                
+                if (chunk.audioData) {
+                    // Audio is saved as base64
+                    html += `<p class="success">✅ Audio data found (base64)</p>`;
+                    
+                    try {
+                        const base64Response = await fetch(chunk.audioData);
+                        const blob = await base64Response.blob();
+                        audioBlobs.push({
+                            index: i,
+                            text: chunk.text,
+                            blob: blob,
+                            recovered: true
+                        });
+                        
+                        const audioUrl = URL.createObjectURL(blob);
+                        html += `<audio controls class="audio-player">
+                                    <source src="${audioUrl}" type="audio/wav">
+                                </audio>`;
+                        html += `<br><button onclick="downloadChunk(${i})">Download Audio</button>`;
+                    } catch (e) {
+                        html += `<p class="error">Error converting audio: ${e.message}</p>`;
+                    }
+                } else if (chunk.audioUrl) {
+                    // Check if it's a UUID-based URL that might be missing
+                    const filename = chunk.audioUrl.split('/').pop();
+                    html += `<p class="warning">⚠️ Audio URL found: ${filename}</p>`;
+                    
+                    // Store for recovery attempt
+                    missingAudioUrls.push({
+                        index: i,
+                        url: chunk.audioUrl,
+                        filename: filename,
+                        text: chunk.text
+                    });
+                    
+                    html += `<button onclick="tryRecoverSingle(${i}, '${chunk.audioUrl}')">Try Recovery</button>`;
+                } else {
+                    html += `<p class="error">❌ No audio data</p>`;
+                }
+                
+                chunkDiv.innerHTML = html;
+                chunksDiv.appendChild(chunkDiv);
+            }
+            
+            updateStats();
+            document.getElementById('progress').style.display = 'none';
+            log(`Scan complete. Found ${audioBlobs.length} recovered audio files and ${missingAudioUrls.length} missing.`, 
+                audioBlobs.length > 0 ? 'success' : 'warning');
+        }
+        
+        async function tryRecoverSingle(index, audioUrl) {
+            const chunkDiv = document.getElementById(`chunk-${index}`);
+            try {
+                log(`Attempting to recover audio from: ${audioUrl}`);
+                
+                // Try different URL patterns
+                const attempts = [
+                    audioUrl,
+                    `${API_BASE_URL}${audioUrl}`,
+                    `${API_BASE_URL}/audio/${audioUrl.split('/').pop()}`
+                ];
+                
+                for (const url of attempts) {
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            audioBlobs.push({
+                                index: index,
+                                text: missingAudioUrls.find(m => m.index === index)?.text || '',
+                                blob: blob,
+                                recovered: true
+                            });
+                            
+                            // Update chunk display
+                            const audioUrl = URL.createObjectURL(blob);
+                            const audioHtml = `<p class="success">✅ Audio recovered!</p>
+                                             <audio controls class="audio-player">
+                                                <source src="${audioUrl}" type="audio/wav">
+                                             </audio>
+                                             <br><button onclick="downloadChunk(${index})">Download Audio</button>`;
+                            
+                            chunkDiv.innerHTML += audioHtml;
+                            updateStats();
+                            log(`Successfully recovered audio for chunk ${index + 1}!`, 'success');
+                            return;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                throw new Error('All recovery attempts failed');
+            } catch (e) {
+                log(`Failed to recover audio for chunk ${index + 1}: ${e.message}`, 'error');
+                chunkDiv.innerHTML += `<p class="error">Recovery failed: ${e.message}</p>`;
+            }
+        }
+        
+        async function attemptRecovery() {
+            if (missingAudioUrls.length === 0) {
+                log('No missing audio files to recover.', 'warning');
+                return;
+            }
+            
+            log(`Attempting to recover ${missingAudioUrls.length} missing audio files...`);
+            let recovered = 0;
+            
+            for (let i = 0; i < missingAudioUrls.length; i++) {
+                showProgress(i + 1, missingAudioUrls.length);
+                const missing = missingAudioUrls[i];
+                
+                try {
+                    await tryRecoverSingle(missing.index, missing.url);
+                    recovered++;
+                } catch (e) {
+                    console.error(`Failed to recover ${missing.filename}:`, e);
+                }
+                
+                // Small delay to avoid overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            document.getElementById('progress').style.display = 'none';
+            log(`Recovery complete. Recovered ${recovered} out of ${missingAudioUrls.length} missing files.`, 
+                recovered > 0 ? 'success' : 'error');
+        }
+        
+        function downloadChunk(index) {
+            const audioData = audioBlobs.find(a => a.index === index);
+            if (!audioData) {
+                alert('Audio not found!');
+                return;
+            }
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(audioData.blob);
+            a.download = `chunk_${index + 1}_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        function downloadAll() {
+            if (audioBlobs.length === 0) {
+                alert('No audio to download! Click "Scan LocalStorage" first.');
+                return;
+            }
+            
+            log(`Downloading ${audioBlobs.length} audio files...`);
+            
+            audioBlobs.forEach((audioData, i) => {
+                setTimeout(() => {
+                    downloadChunk(audioData.index);
+                }, i * 500); // Stagger downloads
+            });
+        }
+        
+        function exportSession() {
+            const sessionData = {
+                chunks: JSON.parse(localStorage.getItem('chunks') || '[]'),
+                parameters: JSON.parse(localStorage.getItem('ttsParameters') || '{}'),
+                savedVoices: JSON.parse(localStorage.getItem('savedVoices') || '[]'),
+                exportDate: new Date().toISOString(),
+                audioRecovered: audioBlobs.length,
+                audioMissing: missingAudioUrls.length
+            };
+            
+            const blob = new Blob([JSON.stringify(sessionData, null, 2)], 
+                                  {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `chatterbox_session_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            log('Session data exported!', 'success');
+        }
+        
+        function clearCompleted() {
+            if (!confirm('This will remove all completed chunks from localStorage. Are you sure?')) {
+                return;
+            }
+            
+            const chunks = JSON.parse(localStorage.getItem('chunks') || '[]');
+            const filtered = chunks.filter(c => c.status !== 'completed' || !c.audioData);
+            
+            localStorage.setItem('chunks', JSON.stringify(filtered));
+            log(`Cleared ${chunks.length - filtered.length} completed chunks.`, 'success');
+            
+            // Refresh display
+            scanLocalStorage();
+        }
+        
+        // Auto-scan on load
+        window.onload = () => {
+            scanLocalStorage();
+        };
+    </script>
+</body>
+</html>

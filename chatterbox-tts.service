@@ -1,0 +1,47 @@
+[Unit]
+Description=Chatterbox TTS API Server
+Documentation=https://github.com/resemble-ai/chatterbox
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=crogers2287
+Group=crogers2287
+WorkingDirectory=/home/crogers2287/chatterbox
+
+# Environment
+Environment="PATH=/home/crogers2287/chatterbox/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/crogers2287/chatterbox/src"
+Environment="CUDA_VISIBLE_DEVICES=0"
+Environment="PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512"
+
+# Direct Python execution
+ExecStart=/home/crogers2287/chatterbox/venv/bin/python /home/crogers2287/chatterbox/api_server.py
+
+# Service management
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterbox-tts
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security - relaxed for GPU access
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+
+# GPU access
+SupplementaryGroups=video render
+
+[Install]
+WantedBy=multi-user.target

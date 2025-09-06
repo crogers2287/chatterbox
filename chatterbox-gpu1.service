@@ -1,0 +1,49 @@
+[Unit]
+Description=Chatterbox TTS GPU 1 Server (Fast)
+Documentation=https://github.com/resemble-ai/chatterbox
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=crogers2287
+Group=crogers2287
+WorkingDirectory=/home/crogers2287/chatterbox
+
+# Environment
+Environment="PATH=/home/crogers2287/chatterbox/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/crogers2287/chatterbox/src"
+Environment="PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512"
+Environment="CUDA_VISIBLE_DEVICES=1"
+Environment="API_PORT=6094"
+
+# Direct Python execution
+ExecStart=/home/crogers2287/chatterbox/venv/bin/python /home/crogers2287/chatterbox/api_server_fast_gpu1.py
+
+# Service management
+Restart=always
+RestartSec=10
+StartLimitInterval=600
+StartLimitBurst=5
+TimeoutStartSec=300
+TimeoutStopSec=60
+
+# Logging
+StandardOutput=append:/home/crogers2287/chatterbox/logs/gpu1_server.log
+StandardError=append:/home/crogers2287/chatterbox/logs/gpu1_server.log
+SyslogIdentifier=chatterbox-gpu1
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security - relaxed for GPU access
+NoNewPrivileges=true
+ProtectSystem=false
+ProtectHome=false
+
+# GPU access
+SupplementaryGroups=video render
+
+[Install]
+WantedBy=multi-user.target

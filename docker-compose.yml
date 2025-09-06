@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  chatterbox-unified:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatterbox-unified
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PORT=8000
+      - VIBEVOICE_URL=http://vibevoice:5000
+      - VIBEVOICE_API_KEY=${VIBEVOICE_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./saved_voices:/app/saved_voices
+      - ./logs:/app/logs
+    depends_on:
+      - vibevoice
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - tts-network
+    command: python gpu_unified_tts_server.py
+
+  vibevoice:
+    image: eworkerinc/vibevoice:latest
+    container_name: vibevoice
+    ports:
+      - "5000:5000"
+    environment:
+      - VIBEVOICE_LICENSE_KEY=${VIBEVOICE_LICENSE_KEY:-}
+      - VIBEVOICE_MODEL_SIZE=large
+      - VIBEVOICE_DEVICE=cuda  # Run on GPU
+      - CUDA_VISIBLE_DEVICES=0  # Same GPU as Chatterbox
+      - VIBEVOICE_GPU_MEMORY_FRACTION=1.0  # Use all available GPU memory when active
+      - VIBEVOICE_ENABLE_GPU=true
+      - VIBEVOICE_GPU_OFFLOAD=full  # Full GPU offloading
+      - VIBEVOICE_CUDA_COMPUTE_MODE=exclusive  # Exclusive GPU access when active
+      - VIBEVOICE_BATCH_SIZE=1  # Process one at a time for quality
+      - VIBEVOICE_USE_FP16=true  # Use FP16 for better GPU performance
+      - VIBEVOICE_ENABLE_CUDNN=true  # Enable cuDNN optimizations
+      - VIBEVOICE_TORCH_COMPILE=true  # Use torch.compile for faster inference
+    volumes:
+      - vibevoice-models:/models
+      - vibevoice-cache:/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - tts-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  chatterbox-webui:
+    build:
+      context: ./chatterbox-webui
+      dockerfile: Dockerfile
+    container_name: chatterbox-webui
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_ENABLE_ENGINE_SELECTION=true
+    volumes:
+      - ./chatterbox-webui:/app
+      - /app/node_modules
+    networks:
+      - tts-network
+    depends_on:
+      - chatterbox-unified
+
+  nginx:
+    image: nginx:alpine
+    container_name: tts-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-tts.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - tts-network
+    depends_on:
+      - chatterbox-unified
+      - chatterbox-webui
+
+networks:
+  tts-network:
+    driver: bridge
+
+volumes:
+  vibevoice-models:
+  vibevoice-cache:

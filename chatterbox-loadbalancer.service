@@ -1,0 +1,44 @@
+[Unit]
+Description=Chatterbox TTS Load Balancer
+Documentation=https://github.com/resemble-ai/chatterbox
+After=network.target chatterbox-gpu0.service chatterbox-gpu1.service
+Wants=network.target
+Requires=chatterbox-gpu0.service chatterbox-gpu1.service
+
+[Service]
+Type=simple
+User=crogers2287
+Group=crogers2287
+WorkingDirectory=/home/crogers2287/chatterbox
+
+# Environment
+Environment="PATH=/home/crogers2287/chatterbox/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/crogers2287/chatterbox/src"
+
+# Direct Python execution
+ExecStart=/home/crogers2287/chatterbox/venv/bin/python /home/crogers2287/chatterbox/dual_gpu_loadbalancer.py
+
+# Service management
+Restart=always
+RestartSec=10
+StartLimitInterval=600
+StartLimitBurst=5
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=append:/home/crogers2287/chatterbox/logs/loadbalancer.log
+StandardError=append:/home/crogers2287/chatterbox/logs/loadbalancer.log
+SyslogIdentifier=chatterbox-loadbalancer
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security
+NoNewPrivileges=true
+ProtectSystem=false
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

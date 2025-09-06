@@ -1,0 +1,34 @@
+[Unit]
+Description=Chatterbox TTS WebUI
+Documentation=https://github.com/resemble-ai/chatterbox
+After=network.target chatterbox-tts.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=crogers2287
+Group=crogers2287
+WorkingDirectory=/home/crogers2287/chatterbox/chatterbox-webui
+
+# Environment
+Environment="NODE_ENV=development"
+Environment="PATH=/home/crogers2287/chatterbox/chatterbox-webui/node_modules/.bin:/usr/bin:/bin:/usr/local/bin"
+
+# Use Python wrapper to run dev server
+ExecStart=/home/crogers2287/chatterbox/venv/bin/python /home/crogers2287/chatterbox/serve-webui.py
+
+# Service management
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterbox-webui
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

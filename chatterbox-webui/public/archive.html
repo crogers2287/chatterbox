@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatterbox Archive - All Generated Audio</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-hover: #3a3a3a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #4a9eff;
+            --success: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--bg-secondary);
+        }
+        
+        h1 {
+            font-size: 2em;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #3a8eef;
+            transform: translateY(-1px);
+        }
+        
+        button:disabled {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+        
+        button.danger {
+            background: var(--danger);
+        }
+        
+        button.danger:hover {
+            background: #e33326;
+        }
+        
+        button.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        button.secondary:hover {
+            background: var(--bg-hover);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        
+        .filters {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+        
+        input, select {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--bg-hover);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .session-group {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .session-header {
+            background: var(--bg-hover);
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .session-header:hover {
+            background: #404040;
+        }
+        
+        .session-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .session-title {
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        
+        .session-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .session-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .session-content.expanded {
+            display: block;
+        }
+        
+        .audio-item {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .audio-item:hover {
+            background: var(--bg-hover);
+        }
+        
+        .audio-item.selected {
+            background: var(--bg-hover);
+            border: 1px solid var(--accent);
+        }
+        
+        .audio-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .audio-info {
+            flex: 1;
+        }
+        
+        .audio-text {
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        
+        .audio-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+        
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        audio {
+            height: 32px;
+            max-width: 300px;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state h2 {
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .export-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .export-option {
+            background: var(--bg-primary);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .export-option:hover {
+            background: var(--bg-hover);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+            z-index: 10000;
+        }
+        
+        .toast.info {
+            background: var(--accent);
+        }
+        
+        .audio-item.playing {
+            background: var(--accent) !important;
+            color: white !important;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            audio {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chatterbox Archive</h1>
+            <div class="actions">
+                <button onclick="archiveManager.loadFromStorage()">
+                    🔄 Refresh
+                </button>
+                <button onclick="archiveManager.playSelected()" id="playBtn">
+                    ▶️ Play Selected
+                </button>
+                <button onclick="archiveManager.combineSelectedQuick()" id="combineBtn">
+                    🔗 Quick Combine
+                </button>
+                <button onclick="archiveManager.showExportModal()" id="exportBtn">
+                    📥 Export Selected
+                </button>
+                <button onclick="archiveManager.toggleSelectAll()" id="selectAllBtn">
+                    ✓ Select All
+                </button>
+                <button class="danger" onclick="archiveManager.clearSelected()">
+                    🗑️ Delete Selected
+                </button>
+            </div>
+        </header>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSessions">0</div>
+                <div class="stat-label">Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalAudio">0</div>
+                <div class="stat-label">Audio Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalDuration">0m</div>
+                <div class="stat-label">Total Duration</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="storageUsed">0 MB</div>
+                <div class="stat-label">Storage Used</div>
+            </div>
+        </div>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label>Search Text</label>
+                <input type="text" id="searchText" placeholder="Search in text..." 
+                       onkeyup="archiveManager.applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>Date Range</label>
+                <input type="date" id="dateFrom" onchange="archiveManager.applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <input type="date" id="dateTo" onchange="archiveManager.applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>Sort By</label>
+                <select id="sortBy" onchange="archiveManager.applyFilters()">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="duration-desc">Longest First</option>
+                    <option value="duration-asc">Shortest First</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="sessionsList"></div>
+        
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h2>No Audio Found</h2>
+            <p>Generate some audio in Chatterbox to see it here!</p>
+        </div>
+    </div>
+    
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="archiveManager.hideExportModal()">&times;</span>
+            <h2>Export Options</h2>
+            <p id="exportInfo"></p>
+            <div class="export-options">
+                <div class="export-option" onclick="archiveManager.exportAsJSON()">
+                    <div>
+                        <strong>Export as JSON</strong>
+                        <div style="font-size: 0.9em; color: var(--text-secondary);">
+                            Metadata only, lightweight
+                        </div>
+                    </div>
+                    <span>📄</span>
+                </div>
+                <div class="export-option" onclick="archiveManager.exportWithAudio()">
+                    <div>
+                        <strong>Export with Audio</strong>
+                        <div style="font-size: 0.9em; color: var(--text-secondary);">
+                            Full backup with audio files
+                        </div>
+                    </div>
+                    <span>🎵</span>
+                </div>
+                <div class="export-option" onclick="archiveManager.combineToMP3()">
+                    <div>
+                        <strong>Combine to MP3</strong>
+                        <div style="font-size: 0.9em; color: var(--text-secondary);">
+                            Merge selected into single file
+                        </div>
+                    </div>
+                    <span>🎧</span>
+                </div>
+            </div>
+            <div class="progress-bar" id="exportProgress" style="display: none;">
+                <div class="progress-fill" id="exportProgressFill"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        class ArchiveManager {
+            constructor() {
+                this.sessions = {};
+                this.selectedAudio = new Set();
+                this.allAudioIds = [];
+                this.apiUrl = this.getApiUrl();
+            }
+            
+            getApiUrl() {
+                const hostname = window.location.hostname;
+                const protocol = window.location.protocol;
+                
+                if (hostname === 'chatter.skinnyc.pro' && protocol === 'https:') {
+                    return '/api';
+                } else if (hostname === 'localhost') {
+                    return 'http://localhost:6095';
+                } else {
+                    return `http://${hostname}:6095`;
+                }
+            }
+            
+            async loadFromStorage() {
+                // Load from multiple sources
+                const sources = [
+                    { key: 'chunks', type: 'chunks' },
+                    { key: 'chatterbox_archive', type: 'archive' },
+                    { key: 'chatterbox_sessions', type: 'sessions' }
+                ];
+                
+                this.sessions = {};
+                this.allAudioIds = [];
+                
+                for (const source of sources) {
+                    try {
+                        const data = localStorage.getItem(source.key);
+                        if (data) {
+                            const parsed = JSON.parse(data);
+                            this.processSourceData(parsed, source.type);
+                        }
+                    } catch (error) {
+                        console.error(`Error loading ${source.key}:`, error);
+                    }
+                }
+                
+                // Also check for any session-specific keys
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('session_')) {
+                        try {
+                            const sessionData = JSON.parse(localStorage.getItem(key));
+                            this.processSessionData(sessionData, key);
+                        } catch (error) {
+                            console.error(`Error loading ${key}:`, error);
+                        }
+                    }
+                }
+                
+                this.render();
+                this.updateStats();
+            }
+            
+            processSourceData(data, type) {
+                if (type === 'chunks' && Array.isArray(data)) {
+                    // Group chunks by date
+                    const today = new Date().toISOString().split('T')[0];
+                    const sessionId = `session_${today}`;
+                    
+                    if (!this.sessions[sessionId]) {
+                        this.sessions[sessionId] = {
+                            id: sessionId,
+                            name: `Session ${today}`,
+                            date: new Date().toISOString(),
+                            items: []
+                        };
+                    }
+                    
+                    data.forEach(chunk => {
+                        if (chunk.status === 'completed' && (chunk.audioUrl || chunk.audioData)) {
+                            const audioItem = {
+                                id: chunk.id || `audio_${Date.now()}_${Math.random()}`,
+                                text: chunk.text,
+                                audioUrl: chunk.audioUrl,
+                                audioData: chunk.audioData,
+                                duration: chunk.duration || 0,
+                                timestamp: chunk.timestamp || new Date().toISOString(),
+                                parameters: chunk.parameters || {}
+                            };
+                            this.sessions[sessionId].items.push(audioItem);
+                            this.allAudioIds.push(audioItem.id);
+                        }
+                    });
+                }
+                // Add processing for other types as needed
+            }
+            
+            processSessionData(sessionData, sessionId) {
+                if (!this.sessions[sessionId]) {
+                    this.sessions[sessionId] = {
+                        id: sessionId,
+                        name: sessionData.name || sessionId,
+                        date: sessionData.date || new Date().toISOString(),
+                        items: []
+                    };
+                }
+                
+                if (sessionData.items && Array.isArray(sessionData.items)) {
+                    sessionData.items.forEach(item => {
+                        this.sessions[sessionId].items.push(item);
+                        this.allAudioIds.push(item.id);
+                    });
+                }
+            }
+            
+            render() {
+                const container = document.getElementById('sessionsList');
+                const sessions = Object.values(this.sessions);
+                
+                if (sessions.length === 0) {
+                    container.innerHTML = '';
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('emptyState').style.display = 'none';
+                
+                // Apply filters and sorting
+                const filteredSessions = this.filterSessions(sessions);
+                
+                container.innerHTML = filteredSessions.map(session => `
+                    <div class="session-group" data-session-id="${session.id}">
+                        <div class="session-header" onclick="archiveManager.toggleSession('${session.id}')">
+                            <div class="session-info">
+                                <div class="session-title">${this.escapeHtml(session.name)}</div>
+                                <div class="session-meta">
+                                    <span>📅 ${new Date(session.date).toLocaleDateString()}</span>
+                                    <span>🎵 ${session.items.length} files</span>
+                                    <span>⏱️ ${this.formatDuration(this.getSessionDuration(session))}</span>
+                                </div>
+                            </div>
+                            <div class="session-actions">
+                                <button class="secondary" onclick="event.stopPropagation(); archiveManager.selectSession('${session.id}')">
+                                    Select All
+                                </button>
+                                <button onclick="event.stopPropagation(); archiveManager.playSession('${session.id}')">
+                                    ▶️ Play All
+                                </button>
+                            </div>
+                        </div>
+                        <div class="session-content" id="session-content-${session.id}">
+                            ${session.items.map(item => this.renderAudioItem(item, session.id)).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            renderAudioItem(item, sessionId) {
+                const isSelected = this.selectedAudio.has(item.id);
+                const audioUrl = item.audioUrl ? `${this.apiUrl}${item.audioUrl}` : item.audioData;
+                
+                return `
+                    <div class="audio-item ${isSelected ? 'selected' : ''}" data-audio-id="${item.id}">
+                        <input type="checkbox" 
+                               class="audio-checkbox" 
+                               ${isSelected ? 'checked' : ''}
+                               onchange="archiveManager.toggleAudioSelection('${item.id}')">
+                        <div class="audio-info">
+                            <div class="audio-text">${this.escapeHtml(item.text || 'No text')}</div>
+                            <div class="audio-meta">
+                                <span>🕐 ${new Date(item.timestamp).toLocaleTimeString()}</span>
+                                <span>⏱️ ${this.formatDuration(item.duration)}</span>
+                                ${item.parameters?.temperature ? `<span>🌡️ ${item.parameters.temperature}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="audio-controls">
+                            <audio controls src="${audioUrl}"></audio>
+                            <button class="icon-btn" onclick="archiveManager.downloadAudio('${item.id}', '${sessionId}')" title="Download">
+                                💾
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            filterSessions(sessions) {
+                const searchText = document.getElementById('searchText').value.toLowerCase();
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                const sortBy = document.getElementById('sortBy').value;
+                
+                let filtered = sessions;
+                
+                // Text filter
+                if (searchText) {
+                    filtered = filtered.map(session => ({
+                        ...session,
+                        items: session.items.filter(item => 
+                            item.text && item.text.toLowerCase().includes(searchText)
+                        )
+                    })).filter(session => session.items.length > 0);
+                }
+                
+                // Date filter
+                if (dateFrom || dateTo) {
+                    filtered = filtered.filter(session => {
+                        const sessionDate = new Date(session.date).toISOString().split('T')[0];
+                        if (dateFrom && sessionDate < dateFrom) return false;
+                        if (dateTo && sessionDate > dateTo) return false;
+                        return true;
+                    });
+                }
+                
+                // Sorting
+                filtered.sort((a, b) => {
+                    switch (sortBy) {
+                        case 'date-asc':
+                            return new Date(a.date) - new Date(b.date);
+                        case 'date-desc':
+                            return new Date(b.date) - new Date(a.date);
+                        case 'duration-desc':
+                            return this.getSessionDuration(b) - this.getSessionDuration(a);
+                        case 'duration-asc':
+                            return this.getSessionDuration(a) - this.getSessionDuration(b);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                return filtered;
+            }
+            
+            getSessionDuration(session) {
+                return session.items.reduce((sum, item) => sum + (item.duration || 0), 0);
+            }
+            
+            formatDuration(seconds) {
+                if (!seconds) return '0s';
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                if (minutes > 0) {
+                    return `${minutes}m ${secs}s`;
+                }
+                return `${secs}s`;
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            updateStats() {
+                const sessions = Object.values(this.sessions);
+                const totalAudio = sessions.reduce((sum, s) => sum + s.items.length, 0);
+                const totalDuration = sessions.reduce((sum, s) => sum + this.getSessionDuration(s), 0);
+                
+                document.getElementById('totalSessions').textContent = sessions.length;
+                document.getElementById('totalAudio').textContent = totalAudio;
+                document.getElementById('totalDuration').textContent = Math.floor(totalDuration / 60) + 'm';
+                
+                // Estimate storage (rough calculation)
+                const storageBytes = JSON.stringify(localStorage).length;
+                const storageMB = (storageBytes / 1024 / 1024).toFixed(2);
+                document.getElementById('storageUsed').textContent = storageMB + ' MB';
+                
+                // Update action button states
+                const exportBtn = document.getElementById('exportBtn');
+                const playBtn = document.getElementById('playBtn');
+                const combineBtn = document.getElementById('combineBtn');
+                
+                const selectedCount = this.selectedAudio.size;
+                const hasSelection = selectedCount > 0;
+                
+                exportBtn.textContent = hasSelection ? 
+                    `📥 Export Selected (${selectedCount})` : '📥 Export Selected';
+                exportBtn.disabled = !hasSelection;
+                
+                playBtn.textContent = hasSelection ? 
+                    `▶️ Play Selected (${selectedCount})` : '▶️ Play Selected';
+                playBtn.disabled = !hasSelection;
+                
+                combineBtn.textContent = hasSelection ? 
+                    `🔗 Quick Combine (${selectedCount})` : '🔗 Quick Combine';
+                combineBtn.disabled = !hasSelection;
+            }
+            
+            toggleSession(sessionId) {
+                const content = document.getElementById(`session-content-${sessionId}`);
+                content.classList.toggle('expanded');
+            }
+            
+            toggleAudioSelection(audioId) {
+                if (this.selectedAudio.has(audioId)) {
+                    this.selectedAudio.delete(audioId);
+                } else {
+                    this.selectedAudio.add(audioId);
+                }
+                this.render();
+                this.updateStats();
+            }
+            
+            selectSession(sessionId) {
+                const session = this.sessions[sessionId];
+                if (session) {
+                    session.items.forEach(item => {
+                        this.selectedAudio.add(item.id);
+                    });
+                    this.render();
+                    this.updateStats();
+                }
+            }
+            
+            toggleSelectAll() {
+                if (this.selectedAudio.size === this.allAudioIds.length) {
+                    this.selectedAudio.clear();
+                } else {
+                    this.allAudioIds.forEach(id => this.selectedAudio.add(id));
+                }
+                this.render();
+                this.updateStats();
+            }
+            
+            clearSelected() {
+                if (this.selectedAudio.size === 0) {
+                    this.showToast('No items selected', 'warning');
+                    return;
+                }
+                
+                if (!confirm(`Delete ${this.selectedAudio.size} selected items? This cannot be undone.`)) {
+                    return;
+                }
+                
+                // Remove from sessions
+                Object.values(this.sessions).forEach(session => {
+                    session.items = session.items.filter(item => !this.selectedAudio.has(item.id));
+                });
+                
+                // Remove empty sessions
+                Object.keys(this.sessions).forEach(sessionId => {
+                    if (this.sessions[sessionId].items.length === 0) {
+                        delete this.sessions[sessionId];
+                    }
+                });
+                
+                // Save to storage
+                this.saveToStorage();
+                
+                this.selectedAudio.clear();
+                this.loadFromStorage();
+                this.showToast(`Deleted ${this.selectedAudio.size} items`);
+            }
+            
+            saveToStorage() {
+                // Save archive data
+                const archiveData = {
+                    sessions: this.sessions,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('chatterbox_archive', JSON.stringify(archiveData));
+            }
+            
+            async playSession(sessionId) {
+                const session = this.sessions[sessionId];
+                if (!session || session.items.length === 0) return;
+                
+                // Create playlist and play
+                this.showToast(`Playing ${session.items.length} audio files`);
+                
+                // TODO: Implement sequential playback
+            }
+            
+            async downloadAudio(audioId, sessionId) {
+                const session = this.sessions[sessionId];
+                const item = session.items.find(i => i.id === audioId);
+                if (!item) return;
+                
+                try {
+                    const audioUrl = item.audioUrl ? `${this.apiUrl}${item.audioUrl}` : item.audioData;
+                    const response = await fetch(audioUrl);
+                    const blob = await response.blob();
+                    
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `chatterbox_${audioId}.wav`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    this.showToast('Download started');
+                } catch (error) {
+                    console.error('Download error:', error);
+                    this.showToast('Download failed', 'error');
+                }
+            }
+            
+            applyFilters() {
+                this.render();
+            }
+            
+            showExportModal() {
+                const modal = document.getElementById('exportModal');
+                const info = document.getElementById('exportInfo');
+                info.textContent = `${this.selectedAudio.size} items selected for export`;
+                modal.style.display = 'block';
+            }
+            
+            hideExportModal() {
+                document.getElementById('exportModal').style.display = 'none';
+            }
+            
+            async exportAsJSON() {
+                const exportData = {
+                    exportDate: new Date().toISOString(),
+                    sessions: {}
+                };
+                
+                // Collect selected items
+                Object.values(this.sessions).forEach(session => {
+                    const selectedItems = session.items.filter(item => this.selectedAudio.has(item.id));
+                    if (selectedItems.length > 0) {
+                        exportData.sessions[session.id] = {
+                            ...session,
+                            items: selectedItems
+                        };
+                    }
+                });
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chatterbox_archive_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.hideExportModal();
+                this.showToast('JSON export completed');
+            }
+            
+            async exportWithAudio() {
+                this.showToast('Preparing audio export...');
+                // TODO: Implement full export with audio files
+                // This would create a zip file with metadata and audio
+            }
+            
+            async combineToMP3() {
+                const audioUrls = [];
+                
+                // Collect audio URLs in order
+                Object.values(this.sessions).forEach(session => {
+                    session.items.forEach(item => {
+                        if (this.selectedAudio.has(item.id) && item.audioUrl) {
+                            audioUrls.push(item.audioUrl);
+                        }
+                    });
+                });
+                
+                if (audioUrls.length === 0) {
+                    this.showToast('No audio files to combine', 'warning');
+                    return;
+                }
+                
+                try {
+                    document.getElementById('exportProgress').style.display = 'block';
+                    document.getElementById('exportProgressFill').style.width = '50%';
+                    
+                    const response = await fetch(`${this.apiUrl}/concatenate-audio`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            audio_urls: audioUrls,
+                            output_format: 'mp3'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    document.getElementById('exportProgressFill').style.width = '100%';
+                    
+                    if (result.success) {
+                        // Download the combined file
+                        window.open(`${this.apiUrl}${result.audio_url}`, '_blank');
+                        this.showToast('MP3 export completed');
+                    } else {
+                        throw new Error(result.message || 'Export failed');
+                    }
+                } catch (error) {
+                    console.error('Export error:', error);
+                    this.showToast('Export failed', 'error');
+                } finally {
+                    setTimeout(() => {
+                        document.getElementById('exportProgress').style.display = 'none';
+                    }, 1000);
+                    this.hideExportModal();
+                }
+            }
+            
+            async playSelected() {
+                if (this.selectedAudio.size === 0) {
+                    this.showToast('No items selected', 'warning');
+                    return;
+                }
+                
+                // Get selected audio items in chronological order
+                const selectedItems = [];
+                Object.values(this.sessions).forEach(session => {
+                    session.items.forEach(item => {
+                        if (this.selectedAudio.has(item.id)) {
+                            selectedItems.push({
+                                ...item,
+                                sessionName: session.name
+                            });
+                        }
+                    });
+                });
+                
+                selectedItems.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                this.showToast(`Playing ${selectedItems.length} selected audio files`);
+                
+                // Play files sequentially
+                for (let i = 0; i < selectedItems.length; i++) {
+                    const item = selectedItems[i];
+                    const audioUrl = item.audioUrl ? `${this.apiUrl}${item.audioUrl}` : item.audioData;
+                    
+                    if (audioUrl) {
+                        console.log(`Playing ${i + 1}/${selectedItems.length}: ${item.text.substring(0, 50)}...`);
+                        await this.playAudioFile(audioUrl, item.text);
+                    }
+                }
+                
+                this.showToast('Finished playing all selected files');
+            }
+            
+            async playAudioFile(audioUrl, text) {
+                return new Promise((resolve, reject) => {
+                    const audio = new Audio(audioUrl);
+                    
+                    audio.onended = resolve;
+                    audio.onerror = (e) => {
+                        console.error('Audio playback error:', e);
+                        resolve(); // Continue to next file even on error
+                    };
+                    
+                    // Show what's currently playing
+                    this.showToast(`Playing: ${text.substring(0, 40)}...`, 'info');
+                    
+                    audio.play().catch(error => {
+                        console.error('Play error:', error);
+                        resolve();
+                    });
+                });
+            }
+            
+            async combineSelectedQuick() {
+                if (this.selectedAudio.size === 0) {
+                    this.showToast('No items selected', 'warning');
+                    return;
+                }
+                
+                // Get selected audio URLs in chronological order
+                const audioUrls = [];
+                const selectedItems = [];
+                
+                Object.values(this.sessions).forEach(session => {
+                    session.items.forEach(item => {
+                        if (this.selectedAudio.has(item.id) && item.audioUrl) {
+                            selectedItems.push({
+                                ...item,
+                                sessionName: session.name
+                            });
+                        }
+                    });
+                });
+                
+                selectedItems.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                selectedItems.forEach(item => audioUrls.push(item.audioUrl));
+                
+                if (audioUrls.length === 0) {
+                    this.showToast('No audio URLs found for selected items', 'warning');
+                    return;
+                }
+                
+                try {
+                    this.showToast('Combining selected audio files...', 'info');
+                    
+                    const response = await fetch(`${this.apiUrl}/concatenate-audio`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            audio_urls: audioUrls,
+                            output_format: 'mp3'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Show combined audio with player
+                        const combinedUrl = `${this.apiUrl}${result.audio_url}`;
+                        const filename = result.audio_url.split('/').pop();
+                        
+                        // Create a temporary result display
+                        const existingResult = document.getElementById('quickCombineResult');
+                        if (existingResult) {
+                            existingResult.remove();
+                        }
+                        
+                        const resultDiv = document.createElement('div');
+                        resultDiv.id = 'quickCombineResult';
+                        resultDiv.style.cssText = `
+                            background: var(--bg-secondary);
+                            padding: 20px;
+                            border-radius: 10px;
+                            margin: 20px 0;
+                            border: 2px solid var(--success);
+                        `;
+                        
+                        resultDiv.innerHTML = `
+                            <h3 style="color: var(--success); margin-bottom: 10px;">✓ Quick Combine Complete</h3>
+                            <p>Combined ${result.total_files} audio files (${selectedItems.length} selected)</p>
+                            <p style="margin: 10px 0;">Format: MP3</p>
+                            <div style="margin: 15px 0;">
+                                <audio controls src="${combinedUrl}" style="width: 100%; max-width: 400px;"></audio>
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <a href="${combinedUrl}" download="${filename}">
+                                    <button style="background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                        💾 Download MP3
+                                    </button>
+                                </a>
+                                <button onclick="this.parentElement.parentElement.remove()" 
+                                        style="background: var(--bg-hover); color: var(--text-primary); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                    ✖ Close
+                                </button>
+                            </div>
+                        `;
+                        
+                        document.querySelector('.container').insertBefore(resultDiv, document.getElementById('sessionsList'));
+                        resultDiv.scrollIntoView({ behavior: 'smooth' });
+                        
+                        this.showToast('Quick combine completed successfully!');
+                    } else {
+                        throw new Error(result.message || 'Combine failed');
+                    }
+                } catch (error) {
+                    console.error('Quick combine error:', error);
+                    this.showToast('Quick combine failed', 'error');
+                }
+            }
+            
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                
+                // Reset classes
+                toast.className = 'toast';
+                
+                if (type === 'error') {
+                    toast.style.background = 'var(--danger)';
+                } else if (type === 'warning') {
+                    toast.style.background = 'var(--warning)';
+                } else if (type === 'info') {
+                    toast.className += ' info';
+                    toast.style.background = 'var(--accent)';
+                } else {
+                    toast.style.background = 'var(--success)';
+                }
+                
+                toast.style.display = 'block';
+                
+                const timeout = type === 'info' ? 2000 : 3000; // Shorter for info messages
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, timeout);
+            }
+        }
+        
+        // Initialize
+        const archiveManager = new ArchiveManager();
+        archiveManager.loadFromStorage();
+        
+        // Auto-save to archive when new audio is generated
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'chunks' || e.key?.startsWith('session_')) {
+                archiveManager.loadFromStorage();
+            }
+        });
+    </script>
+</body>
+</html>

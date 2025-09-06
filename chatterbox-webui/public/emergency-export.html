@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency Audio Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .chunk {
+            margin: 10px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .audio-player {
+            margin: 10px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚨 Emergency Audio Export</h1>
+    <p>This page will help you save your generated audio from localStorage before it's lost.</p>
+    
+    <button onclick="extractAudio()">Extract Audio from LocalStorage</button>
+    <button onclick="downloadAll()">Download All Audio</button>
+    <button onclick="exportSession()">Export Full Session</button>
+    
+    <div id="status"></div>
+    <div id="chunks"></div>
+
+    <script>
+        let audioBlobs = [];
+        
+        function log(msg, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = `<div class="${type}">${msg}</div>`;
+        }
+        
+        async function extractAudio() {
+            const chunksDiv = document.getElementById('chunks');
+            chunksDiv.innerHTML = '';
+            audioBlobs = [];
+            
+            // Get chunks from localStorage
+            const chunksData = localStorage.getItem('chunks');
+            if (!chunksData) {
+                log('No chunks found in localStorage!', 'error');
+                return;
+            }
+            
+            const chunks = JSON.parse(chunksData);
+            log(`Found ${chunks.length} chunks in localStorage`);
+            
+            let savedCount = 0;
+            
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const chunkDiv = document.createElement('div');
+                chunkDiv.className = 'chunk';
+                
+                let html = `<h3>Chunk ${i + 1}</h3>`;
+                html += `<p><strong>Text:</strong> ${chunk.text.substring(0, 100)}...</p>`;
+                html += `<p><strong>Status:</strong> ${chunk.status}</p>`;
+                
+                if (chunk.audioData) {
+                    // Audio is saved as base64
+                    html += `<p class="success">✅ Audio data found (base64)</p>`;
+                    
+                    try {
+                        // Convert base64 to blob
+                        const base64Response = await fetch(chunk.audioData);
+                        const blob = await base64Response.blob();
+                        audioBlobs.push({
+                            index: i,
+                            text: chunk.text,
+                            blob: blob
+                        });
+                        
+                        // Create audio player
+                        const audioUrl = URL.createObjectURL(blob);
+                        html += `<audio controls class="audio-player">
+                                    <source src="${audioUrl}" type="audio/wav">
+                                </audio>`;
+                        
+                        // Download button for individual chunk
+                        html += `<br><button onclick="downloadChunk(${i})">Download Chunk ${i + 1}</button>`;
+                        
+                        savedCount++;
+                    } catch (e) {
+                        html += `<p class="error">Error converting audio: ${e.message}</p>`;
+                    }
+                } else if (chunk.audioUrl) {
+                    html += `<p>Audio URL: ${chunk.audioUrl}</p>`;
+                    // Try to fetch from URL
+                    try {
+                        const response = await fetch(chunk.audioUrl);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            audioBlobs.push({
+                                index: i,
+                                text: chunk.text,
+                                blob: blob
+                            });
+                            const audioUrl = URL.createObjectURL(blob);
+                            html += `<audio controls class="audio-player">
+                                        <source src="${audioUrl}" type="audio/wav">
+                                    </audio>`;
+                            html += `<br><button onclick="downloadChunk(${i})">Download Chunk ${i + 1}</button>`;
+                            savedCount++;
+                        } else {
+                            html += `<p class="error">❌ Could not fetch audio from URL</p>`;
+                        }
+                    } catch (e) {
+                        html += `<p class="error">❌ Error fetching audio: ${e.message}</p>`;
+                    }
+                } else {
+                    html += `<p class="error">❌ No audio data</p>`;
+                }
+                
+                chunkDiv.innerHTML = html;
+                chunksDiv.appendChild(chunkDiv);
+            }
+            
+            log(`Successfully extracted ${savedCount} audio files out of ${chunks.length} chunks`, 
+                savedCount > 0 ? 'success' : 'error');
+        }
+        
+        function downloadChunk(index) {
+            const audioData = audioBlobs.find(a => a.index === index);
+            if (!audioData) {
+                alert('Audio not found!');
+                return;
+            }
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(audioData.blob);
+            a.download = `chunk_${index + 1}_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        function downloadAll() {
+            if (audioBlobs.length === 0) {
+                alert('No audio to download! Click "Extract Audio" first.');
+                return;
+            }
+            
+            audioBlobs.forEach((audioData, i) => {
+                setTimeout(() => {
+                    downloadChunk(audioData.index);
+                }, i * 500); // Stagger downloads
+            });
+        }
+        
+        function exportSession() {
+            const sessionData = {
+                chunks: JSON.parse(localStorage.getItem('chunks') || '[]'),
+                parameters: JSON.parse(localStorage.getItem('ttsParameters') || '{}'),
+                savedVoices: JSON.parse(localStorage.getItem('savedVoices') || '[]'),
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(sessionData, null, 2)], 
+                                  {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `chatterbox_session_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            log('Session data exported!', 'success');
+        }
+        
+        // Auto-extract on load
+        window.onload = () => {
+            extractAudio();
+        };
+    </script>
+</body>
+</html>

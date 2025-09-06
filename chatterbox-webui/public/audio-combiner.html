@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Combiner Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        progress {
+            width: 100%;
+            height: 30px;
+            margin: 10px 0;
+        }
+        .file-list {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .file-item {
+            padding: 5px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Combiner Tool</h1>
+        <p>This tool combines audio files from your saved chunks into a single MP3 or WAV file.</p>
+        
+        <div id="status"></div>
+        
+        <div>
+            <button onclick="loadChunks()">Load Chunks from Storage</button>
+            <button onclick="selectAllChunks()">Select All</button>
+            <button onclick="deselectAllChunks()">Deselect All</button>
+        </div>
+        
+        <div class="file-list" id="fileList" style="display: none;">
+            <h3>Available Audio Chunks:</h3>
+            <div id="chunksList"></div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <label>
+                Output Format:
+                <select id="outputFormat">
+                    <option value="mp3">MP3</option>
+                    <option value="wav">WAV</option>
+                </select>
+            </label>
+            <button onclick="combineSelected()" id="combineBtn" disabled>Combine Selected Audio</button>
+        </div>
+        
+        <progress id="progressBar" style="display: none;" value="0" max="100"></progress>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let audioChunks = [];
+        let selectedChunks = new Set();
+        
+        function log(msg, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = `<div class="${type}">${msg}</div>`;
+        }
+        
+        async function loadChunks() {
+            const chunksData = localStorage.getItem('chunks');
+            if (!chunksData) {
+                log('No chunks found in localStorage!', 'error');
+                return;
+            }
+            
+            audioChunks = JSON.parse(chunksData).filter(chunk => 
+                chunk.status === 'completed' && (chunk.audioData || chunk.audioUrl)
+            );
+            
+            if (audioChunks.length === 0) {
+                log('No completed audio chunks found!', 'error');
+                return;
+            }
+            
+            log(`Found ${audioChunks.length} audio chunks`, 'success');
+            displayChunks();
+        }
+        
+        function displayChunks() {
+            const listDiv = document.getElementById('chunksList');
+            listDiv.innerHTML = '';
+            
+            audioChunks.forEach((chunk, index) => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <label>
+                        <input type="checkbox" value="${index}" onchange="toggleChunk(${index})">
+                        Chunk ${index + 1}: ${chunk.text.substring(0, 50)}...
+                    </label>
+                `;
+                listDiv.appendChild(div);
+            });
+            
+            document.getElementById('fileList').style.display = 'block';
+            document.getElementById('combineBtn').disabled = false;
+        }
+        
+        function toggleChunk(index) {
+            if (selectedChunks.has(index)) {
+                selectedChunks.delete(index);
+            } else {
+                selectedChunks.add(index);
+            }
+            updateCombineButton();
+        }
+        
+        function selectAllChunks() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach((cb, index) => {
+                cb.checked = true;
+                selectedChunks.add(index);
+            });
+            updateCombineButton();
+        }
+        
+        function deselectAllChunks() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach((cb, index) => {
+                cb.checked = false;
+            });
+            selectedChunks.clear();
+            updateCombineButton();
+        }
+        
+        function updateCombineButton() {
+            const btn = document.getElementById('combineBtn');
+            btn.textContent = `Combine ${selectedChunks.size} Selected Audio Files`;
+            btn.disabled = selectedChunks.size === 0;
+        }
+        
+        async function fetchAudioData(chunk) {
+            if (chunk.audioData) {
+                // Audio is saved as base64 data URL
+                const response = await fetch(chunk.audioData);
+                return await response.blob();
+            } else if (chunk.audioUrl) {
+                // Need to fetch from server
+                try {
+                    const response = await fetch(chunk.audioUrl);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.blob();
+                } catch (error) {
+                    console.error('Failed to fetch audio:', chunk.audioUrl, error);
+                    return null;
+                }
+            }
+            return null;
+        }
+        
+        async function combineSelected() {
+            if (selectedChunks.size === 0) {
+                log('Please select audio files to combine', 'error');
+                return;
+            }
+            
+            const format = document.getElementById('outputFormat').value;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.display = 'block';
+            progressBar.value = 0;
+            
+            log(`Combining ${selectedChunks.size} audio files into ${format.toUpperCase()}...`);
+            
+            try {
+                // Sort selected chunks by index
+                const sortedIndices = Array.from(selectedChunks).sort((a, b) => a - b);
+                
+                // Fetch all audio data
+                const audioBlobs = [];
+                for (let i = 0; i < sortedIndices.length; i++) {
+                    const chunk = audioChunks[sortedIndices[i]];
+                    progressBar.value = (i / sortedIndices.length) * 50;
+                    
+                    const blob = await fetchAudioData(chunk);
+                    if (blob) {
+                        audioBlobs.push(blob);
+                    } else {
+                        log(`Warning: Could not load chunk ${sortedIndices[i] + 1}`, 'error');
+                    }
+                }
+                
+                if (audioBlobs.length === 0) {
+                    throw new Error('No audio data could be loaded');
+                }
+                
+                // Combine using Web Audio API
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffers = [];
+                
+                // Decode all audio files
+                for (let i = 0; i < audioBlobs.length; i++) {
+                    progressBar.value = 50 + (i / audioBlobs.length) * 30;
+                    
+                    const arrayBuffer = await audioBlobs[i].arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    audioBuffers.push(audioBuffer);
+                }
+                
+                // Calculate total length
+                const totalLength = audioBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
+                const sampleRate = audioBuffers[0].sampleRate;
+                const numberOfChannels = audioBuffers[0].numberOfChannels;
+                
+                // Create combined buffer
+                const combinedBuffer = audioContext.createBuffer(
+                    numberOfChannels,
+                    totalLength,
+                    sampleRate
+                );
+                
+                // Copy all buffers
+                let offset = 0;
+                for (const buffer of audioBuffers) {
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        combinedBuffer.copyToChannel(
+                            buffer.getChannelData(channel),
+                            channel,
+                            offset
+                        );
+                    }
+                    offset += buffer.length;
+                }
+                
+                progressBar.value = 90;
+                
+                // Convert to desired format
+                let outputBlob;
+                if (format === 'mp3') {
+                    // Try server-side MP3 conversion
+                    log('Using server-side MP3 conversion...', 'info');
+                    try {
+                        const serverResult = await useServerConversion(sortedIndices, format);
+                        if (serverResult) {
+                            displayServerResult(serverResult);
+                            progressBar.style.display = 'none';
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Server conversion failed:', error);
+                        log('Server conversion failed, creating WAV instead', 'warning');
+                    }
+                    // Fallback to WAV
+                    outputBlob = await audioBufferToWav(combinedBuffer);
+                    log('Note: Created WAV file instead of MP3.', 'info');
+                } else {
+                    outputBlob = await audioBufferToWav(combinedBuffer);
+                }
+                
+                progressBar.value = 100;
+                
+                // Create download link
+                const url = URL.createObjectURL(outputBlob);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `combined_audio_${timestamp}.${format === 'mp3' ? 'wav' : format}`;
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>Success!</h3>
+                        <p>Combined ${audioBlobs.length} audio files</p>
+                        <p>Total duration: ${(totalLength / sampleRate).toFixed(2)} seconds</p>
+                        <audio controls src="${url}"></audio>
+                        <br><br>
+                        <a href="${url}" download="${filename}">
+                            <button>Download Combined Audio</button>
+                        </a>
+                    </div>
+                `;
+                
+                progressBar.style.display = 'none';
+                
+            } catch (error) {
+                log(`Error combining audio: ${error.message}`, 'error');
+                progressBar.style.display = 'none';
+            }
+        }
+        
+        // Convert AudioBuffer to WAV blob
+        async function useServerConversion(sortedIndices, format) {
+            // Get the audio URLs for the selected chunks
+            const audioUrls = [];
+            for (const index of sortedIndices) {
+                const chunk = audioChunks[index];
+                if (chunk.audioUrl) {
+                    audioUrls.push(chunk.audioUrl);
+                } else if (chunk.audioData) {
+                    // For base64 data, we'd need to upload it first
+                    // For now, skip server conversion for these
+                    return null;
+                }
+            }
+            
+            if (audioUrls.length === 0) {
+                return null;
+            }
+            
+            // Determine API URL based on current location
+            let apiUrl = 'http://localhost:6095';
+            if (window.location.hostname === 'chatter.skinnyc.pro' && window.location.protocol === 'https:') {
+                apiUrl = '/api';
+            } else if (window.location.hostname !== 'localhost') {
+                apiUrl = `http://${window.location.hostname}:6095`;
+            }
+            
+            const response = await fetch(`${apiUrl}/concatenate-audio`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    audio_urls: audioUrls,
+                    output_format: format
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+        
+        function displayServerResult(result) {
+            const resultDiv = document.getElementById('result');
+            
+            // Determine API URL for download
+            let apiUrl = 'http://localhost:6095';
+            if (window.location.hostname === 'chatter.skinnyc.pro' && window.location.protocol === 'https:') {
+                apiUrl = '/api';
+            } else if (window.location.hostname !== 'localhost') {
+                apiUrl = `http://${window.location.hostname}:6095`;
+            }
+            
+            const audioUrl = `${apiUrl}${result.audio_url}`;
+            const filename = result.audio_url.split('/').pop();
+            
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <h3>Success!</h3>
+                    <p>Combined ${result.total_files} audio files using server-side processing</p>
+                    <p>Format: ${result.format.toUpperCase()}</p>
+                    <audio controls src="${audioUrl}"></audio>
+                    <br><br>
+                    <a href="${audioUrl}" download="${filename}">
+                        <button>Download Combined Audio</button>
+                    </a>
+                </div>
+            `;
+        }
+        
+        // Convert AudioBuffer to WAV blob
+        function audioBufferToWav(buffer) {
+            const length = buffer.length * buffer.numberOfChannels * 2;
+            const arrayBuffer = new ArrayBuffer(44 + length);
+            const view = new DataView(arrayBuffer);
+            const channels = [];
+            let offset = 0;
+            let pos = 0;
+            
+            // Write WAV header
+            const setUint16 = (data) => {
+                view.setUint16(pos, data, true);
+                pos += 2;
+            };
+            const setUint32 = (data) => {
+                view.setUint32(pos, data, true);
+                pos += 4;
+            };
+            
+            // RIFF identifier
+            setUint32(0x46464952); // "RIFF"
+            setUint32(36 + length); // file length - 8
+            setUint32(0x45564157); // "WAVE"
+            
+            // fmt sub-chunk
+            setUint32(0x20746d66); // "fmt "
+            setUint32(16); // subchunk size
+            setUint16(1); // PCM
+            setUint16(buffer.numberOfChannels);
+            setUint32(buffer.sampleRate);
+            setUint32(buffer.sampleRate * 2 * buffer.numberOfChannels); // byte rate
+            setUint16(buffer.numberOfChannels * 2); // block align
+            setUint16(16); // bits per sample
+            
+            // data sub-chunk
+            setUint32(0x61746164); // "data"
+            setUint32(length);
+            
+            // Write interleaved data
+            const channelData = [];
+            for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+                channelData.push(buffer.getChannelData(channel));
+            }
+            
+            while (pos < arrayBuffer.byteLength) {
+                for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+                    let sample = channelData[channel][offset];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    sample = sample * 0x7FFF;
+                    view.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+        
+        // Auto-load on page load
+        window.onload = loadChunks;
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Voice Usage</title>
+</head>
+<body>
+    <h1>Test Voice Usage</h1>
+    <button id="loadVoice">Load Voice tgr</button>
+    <button id="synthesizeWithVoice">Synthesize with Voice</button>
+    <button id="synthesizeNoVoice">Synthesize without Voice</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://fred.taile5e8a3.ts.net:6093';
+        let voiceFile = null;
+        
+        document.getElementById('loadVoice').onclick = async () => {
+            try {
+                // Get voice info
+                const voicesResp = await fetch(`${API_URL}/voices`);
+                const voicesData = await voicesResp.json();
+                console.log('Voices:', voicesData);
+                
+                const voice = voicesData.voices.find(v => v.name === 'tgr');
+                if (!voice) {
+                    document.getElementById('result').innerHTML = 'Voice "tgr" not found';
+                    return;
+                }
+                
+                // Load voice audio file
+                const audioResp = await fetch(`${API_URL}/voices/${voice.id}/audio`);
+                const audioBlob = await audioResp.blob();
+                voiceFile = new File([audioBlob], `voice-${voice.id}.wav`, { type: 'audio/wav' });
+                
+                document.getElementById('result').innerHTML = `Voice loaded: ${voiceFile.name}, size: ${voiceFile.size} bytes`;
+                console.log('Voice file loaded:', voiceFile);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error;
+            }
+        };
+        
+        document.getElementById('synthesizeWithVoice').onclick = async () => {
+            if (!voiceFile) {
+                document.getElementById('result').innerHTML = 'Please load voice first';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('text', 'This is a test with the loaded voice file');
+            formData.append('audio_prompt', voiceFile);
+            formData.append('exaggeration', '0.7');
+            formData.append('temperature', '0.9');
+            formData.append('cfg_weight', '0.6');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}/synthesize`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                const elapsed = (Date.now() - startTime) / 1000;
+                
+                document.getElementById('result').innerHTML = 
+                    `With Voice - Success: ${data.success}<br>` +
+                    `Time: ${elapsed.toFixed(2)}s<br>` +
+                    `Audio: ${data.audio_url}<br>` +
+                    `<audio controls src="${API_URL}${data.audio_url}"></audio>`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error;
+            }
+        };
+        
+        document.getElementById('synthesizeNoVoice').onclick = async () => {
+            const formData = new FormData();
+            formData.append('text', 'This is a test without any voice file');
+            formData.append('exaggeration', '0.7');
+            formData.append('temperature', '0.9');
+            formData.append('cfg_weight', '0.6');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}/synthesize`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                const elapsed = (Date.now() - startTime) / 1000;
+                
+                document.getElementById('result').innerHTML = 
+                    `Without Voice - Success: ${data.success}<br>` +
+                    `Time: ${elapsed.toFixed(2)}s<br>` +
+                    `Audio: ${data.audio_url}<br>` +
+                    `<audio controls src="${API_URL}${data.audio_url}"></audio>`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error;
+            }
+        };
+    </script>
+</body>
+</html>

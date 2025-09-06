@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1756312725753-1wppx8",
+    "name": "tgr",
+    "parameters": {
+      "exaggeration": 0.7,
+      "temperature": 0.9,
+      "cfg_weight": 0.6,
+      "min_p": 0.05,
+      "top_p": 1,
+      "repetition_penalty": 1.1,
+      "seed": 54321,
+      "speech_rate": 1
+    },
+    "createdAt": "2025-08-27T16:38:45.753Z",
+    "voiceReferenceFile": "/home/crogers2287/chatterbox/saved_voices/audio_files/1756312725753-1wppx8.wav"
+  }
+]

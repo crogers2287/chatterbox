@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API URL Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .info {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox API URL Debug</h1>
+    
+    <div class="info">
+        <h3>Current Location</h3>
+        <pre id="location"></pre>
+    </div>
+    
+    <div class="info">
+        <h3>Expected API URL</h3>
+        <pre id="expected"></pre>
+    </div>
+    
+    <div class="info">
+        <h3>Direct API Test</h3>
+        <pre id="apiTest"></pre>
+    </div>
+
+    <script>
+        // Show current location
+        const locationInfo = {
+            href: window.location.href,
+            hostname: window.location.hostname,
+            protocol: window.location.protocol,
+            port: window.location.port || 'default'
+        };
+        document.getElementById('location').textContent = JSON.stringify(locationInfo, null, 2);
+        
+        // Calculate expected API URL
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        let expectedUrl;
+        
+        if (hostname === 'chatter.skinnyc.pro' && protocol === 'https:') {
+            expectedUrl = '/api';
+        } else if (hostname === 'chatter.skinnyc.pro' && protocol === 'http:') {
+            expectedUrl = 'http://chatter.skinnyc.pro:6095';
+        } else if (hostname.startsWith('192.168.')) {
+            expectedUrl = 'http://192.168.1.195:6095';
+        } else {
+            expectedUrl = `${protocol}//${hostname}:6095`;
+        }
+        
+        document.getElementById('expected').textContent = `Expected API URL: ${expectedUrl}`;
+        
+        // Test the API
+        async function testApi() {
+            const testEl = document.getElementById('apiTest');
+            
+            try {
+                // Test relative /api path
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                testEl.innerHTML = `
+<span class="success">✓ API is accessible at /api/health</span>
+<pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                testEl.innerHTML = `
+<span class="error">✗ API test failed</span>
+<pre>${error.message}</pre>
+<br>
+<span class="warning">Testing alternative URLs...</span>
+                `;
+                
+                // Test direct URL
+                try {
+                    const response2 = await fetch('http://192.168.1.195:6095/health');
+                    const data2 = await response2.json();
+                    testEl.innerHTML += `
+<br><span class="success">✓ Direct IP works: http://192.168.1.195:6095</span>
+<pre>${JSON.stringify(data2, null, 2)}</pre>
+                    `;
+                } catch (e) {
+                    testEl.innerHTML += `<br><span class="error">✗ Direct IP failed: ${e.message}</span>`;
+                }
+            }
+        }
+        
+        testApi();
+        
+        // Check what the actual app would load
+        const scriptUrl = window.location.protocol + '//' + window.location.host + '/src/lib/api.ts';
+        testEl.innerHTML += `<br><br>App would load from: ${scriptUrl}`;
+    </script>
+</body>
+</html>

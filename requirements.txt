@@ -1,0 +1,47 @@
+# Core dependencies
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.21.0
+scipy>=1.7.0
+soundfile>=0.11.0
+librosa>=0.9.0
+
+# Web framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# Async support
+aiohttp>=3.8.0
+asyncio>=3.4.3
+
+# Audio processing
+pydub>=0.25.0
+wave
+pyaudio>=0.2.11
+
+# Chatterbox dependencies
+transformers>=4.30.0
+accelerate>=0.20.0
+safetensors>=0.3.0
+omegaconf>=2.3.0
+phonemizer>=3.2.0
+einops>=0.6.0
+rotary_embedding_torch>=0.3.0
+
+# VibeVoice integration
+requests>=2.28.0
+aiofiles>=23.0.0
+
+# Monitoring and logging
+psutil>=5.9.0
+py-cpuinfo>=9.0.0
+
+# Optional optimizations
+triton>=2.0.0  # For CUDA optimizations
+flash-attn>=2.0.0  # For attention optimizations
+
+# Development
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

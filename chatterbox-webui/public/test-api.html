@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+        }
+        .test { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox TTS API Connection Test</h1>
+    
+    <div class="test info">
+        <h3>Testing API Endpoints</h3>
+        <p>This page directly tests the API endpoints to verify configuration.</p>
+    </div>
+
+    <div id="results"></div>
+
+    <button onclick="testAll()">Run All Tests</button>
+    <button onclick="clearResults()">Clear</button>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+        }
+
+        async function testEndpoint(url, name) {
+            log(`Testing ${name}: ${url}`);
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                log(`✅ ${name} Success: ${JSON.stringify(data, null, 2)}`, 'success');
+                return true;
+            } catch (error) {
+                log(`❌ ${name} Failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testSynthesis(url) {
+            log(`Testing synthesis at ${url}`);
+            try {
+                const response = await fetch(url + '/synthesize-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: 'Test synthesis',
+                        speed: 1.0,
+                        temperature: 0.3,
+                        top_k: 20,
+                        top_p: 0.9
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    log(`✅ Synthesis Success: Audio generated in ${data.duration}s`, 'success');
+                } else {
+                    log(`❌ Synthesis Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Synthesis Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAll() {
+            clearResults();
+            log('<strong>Starting API Connection Tests...</strong>');
+            
+            // Test load balancer
+            await testEndpoint('http://fred.taile5e8a3.ts.net:6095/health', 'Load Balancer (6095)');
+            await testEndpoint('http://fred.taile5e8a3.ts.net:6095/lb-stats', 'Load Balancer Stats');
+            
+            // Test direct GPU servers
+            await testEndpoint('http://fred.taile5e8a3.ts.net:6093/health', 'GPU 0 Direct (6093)');
+            await testEndpoint('http://fred.taile5e8a3.ts.net:6094/health', 'GPU 1 Direct (6094)');
+            
+            // Test synthesis
+            await testSynthesis('http://fred.taile5e8a3.ts.net:6095');
+            
+            log('<strong>Tests Complete!</strong>');
+        }
+
+        // Run tests on load
+        testAll();
+    </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Streaming</title>
+</head>
+<body>
+    <h1>Test Streaming Synthesis</h1>
+    <button id="testStreaming">Test Streaming</button>
+    <button id="testRegular">Test Regular</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://fred.taile5e8a3.ts.net:6093';
+        
+        document.getElementById('testStreaming').onclick = async () => {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing streaming...';
+            
+            const startTime = Date.now();
+            const params = new URLSearchParams({
+                text: 'This is a test of streaming synthesis',
+                exaggeration: '0.5',
+                temperature: '0.8',
+                cfg_weight: '0.5',
+                chunk_size: '50'
+            });
+            
+            const eventSource = new EventSource(`${API_URL}/synthesize-stream?${params}`);
+            let chunks = 0;
+            
+            eventSource.addEventListener('audio_chunk', (event) => {
+                chunks++;
+                const elapsed = (Date.now() - startTime) / 1000;
+                result.innerHTML = `Streaming: Received chunk ${chunks} at ${elapsed.toFixed(2)}s`;
+                console.log('Chunk received:', event.data);
+            });
+            
+            eventSource.addEventListener('done', (event) => {
+                const totalTime = (Date.now() - startTime) / 1000;
+                result.innerHTML += `<br>Streaming complete in ${totalTime.toFixed(2)}s with ${chunks} chunks`;
+                eventSource.close();
+            });
+            
+            eventSource.addEventListener('error', (event) => {
+                result.innerHTML += '<br>Error: ' + JSON.stringify(event);
+                eventSource.close();
+            });
+        };
+        
+        document.getElementById('testRegular').onclick = async () => {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing regular...';
+            
+            const startTime = Date.now();
+            try {
+                const response = await fetch(`${API_URL}/synthesize-json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'This is a test of regular synthesis',
+                        exaggeration: 0.5,
+                        temperature: 0.8,
+                        cfg_weight: 0.5,
+                    })
+                });
+                
+                const data = await response.json();
+                const totalTime = (Date.now() - startTime) / 1000;
+                result.innerHTML = `Regular: Complete in ${totalTime.toFixed(2)}s`;
+                console.log('Regular result:', data);
+            } catch (error) {
+                result.innerHTML = 'Error: ' + error;
+            }
+        };
+    </script>
+</body>
+</html>

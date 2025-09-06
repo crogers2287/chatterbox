@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatterbox API Connectivity Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .pending { color: orange; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox API Connectivity Test</h1>
+    
+    <div class="test-section">
+        <h2>API Endpoints</h2>
+        <p>Testing connectivity to all API endpoints:</p>
+        <ul>
+            <li>Load Balancer: <span id="lb-status">http://localhost:6095</span></li>
+            <li>GPU 0 Server: <span id="gpu0-status">http://localhost:6093</span></li>
+            <li>GPU 1 Server: <span id="gpu1-status">http://localhost:6094</span></li>
+        </ul>
+        <button onclick="testConnectivity()">Test All Connections</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Synthesis Test</h2>
+        <textarea id="test-text" rows="4" style="width: 100%;">Hello, this is a test of the Chatterbox TTS system.</textarea><br>
+        <button onclick="testSynthesis()">Test Synthesis (Load Balancer)</button>
+        <button onclick="testStreaming()">Test Streaming</button>
+        <div id="synthesis-result"></div>
+        <audio id="audio-player" controls style="display: none; margin-top: 10px;"></audio>
+    </div>
+    
+    <div class="test-section">
+        <h2>Network Monitor</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <pre id="network-log"></pre>
+    </div>
+
+    <script>
+        const log = (message, type = 'info') => {
+            const logEl = document.getElementById('network-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            logEl.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        };
+
+        const clearLog = () => {
+            document.getElementById('network-log').innerHTML = '';
+        };
+
+        const testEndpoint = async (url, elementId) => {
+            const el = document.getElementById(elementId);
+            el.className = 'pending';
+            el.textContent = `${url} - Testing...`;
+            
+            try {
+                const response = await fetch(`${url}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                });
+                
+                if (response.ok) {
+                    el.className = 'success';
+                    el.textContent = `${url} - ✓ Connected`;
+                    log(`${url} - Connected successfully`, 'success');
+                } else {
+                    el.className = 'error';
+                    el.textContent = `${url} - ✗ Error (${response.status})`;
+                    log(`${url} - Error: ${response.status}`, 'error');
+                }
+            } catch (err) {
+                el.className = 'error';
+                el.textContent = `${url} - ✗ Failed (${err.message})`;
+                log(`${url} - Failed: ${err.message}`, 'error');
+            }
+        };
+
+        const testConnectivity = async () => {
+            log('Starting connectivity test...');
+            await testEndpoint('http://localhost:6095', 'lb-status');
+            await testEndpoint('http://localhost:6093', 'gpu0-status');
+            await testEndpoint('http://localhost:6094', 'gpu1-status');
+        };
+
+        const testSynthesis = async () => {
+            const text = document.getElementById('test-text').value;
+            const resultEl = document.getElementById('synthesis-result');
+            const audioEl = document.getElementById('audio-player');
+            
+            resultEl.innerHTML = '<p class="pending">Generating audio...</p>';
+            log(`Synthesizing: "${text}"`);
+            
+            try {
+                const response = await fetch('http://localhost:6095/api/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        text: text,
+                        speed: 1.0,
+                        temperature: 0.3,
+                        top_k: 20,
+                        top_p: 0.9,
+                        use_streaming: false
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Response: ${JSON.stringify(data)}`);
+                
+                if (data.success && data.audio_url) {
+                    resultEl.innerHTML = '<p class="success">✓ Audio generated successfully!</p>';
+                    
+                    // Construct full audio URL
+                    const audioUrl = `http://localhost:6095${data.audio_url}`;
+                    audioEl.src = audioUrl;
+                    audioEl.style.display = 'block';
+                    
+                    log(`Audio URL: ${audioUrl}`, 'success');
+                } else {
+                    resultEl.innerHTML = `<p class="error">✗ Generation failed: ${data.message || 'Unknown error'}</p>`;
+                    log(`Generation failed: ${data.message}`, 'error');
+                }
+            } catch (err) {
+                resultEl.innerHTML = `<p class="error">✗ Request failed: ${err.message}</p>`;
+                log(`Request failed: ${err.message}`, 'error');
+            }
+        };
+
+        const testStreaming = async () => {
+            const text = document.getElementById('test-text').value;
+            const resultEl = document.getElementById('synthesis-result');
+            
+            resultEl.innerHTML = '<p class="pending">Starting streaming synthesis...</p>';
+            log(`Streaming synthesis: "${text}"`);
+            
+            try {
+                const response = await fetch('http://localhost:6095/api/synthesize/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        text: text,
+                        speed: 1.0,
+                        temperature: 0.3,
+                        top_k: 20,
+                        top_p: 0.9,
+                        chunk_size: 50
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let chunks = 0;
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const text = decoder.decode(value);
+                    chunks++;
+                    log(`Received chunk ${chunks} (${value.byteLength} bytes)`);
+                }
+                
+                resultEl.innerHTML = `<p class="success">✓ Streaming completed! Received ${chunks} chunks</p>`;
+                log(`Streaming completed: ${chunks} chunks`, 'success');
+                
+            } catch (err) {
+                resultEl.innerHTML = `<p class="error">✗ Streaming failed: ${err.message}</p>`;
+                log(`Streaming failed: ${err.message}`, 'error');
+            }
+        };
+
+        // Test connectivity on load
+        window.onload = () => {
+            log('Page loaded - ready for testing');
+            testConnectivity();
+        };
+    </script>
+</body>
+</html>

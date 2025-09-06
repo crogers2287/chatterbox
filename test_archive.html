@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Archive</title>
+</head>
+<body>
+    <h1>Testing Archive Page</h1>
+    <a href="/archive.html">Open Archive Page</a>
+    
+    <script>
+        // Add some test data
+        const testChunks = [
+            {
+                id: "test1",
+                text: "This is the first test audio file for archiving.",
+                status: "completed",
+                audioUrl: "/audio/test1.wav",
+                duration: 2.5,
+                timestamp: new Date().toISOString()
+            },
+            {
+                id: "test2", 
+                text: "This is the second test audio file for archiving.",
+                status: "completed",
+                audioUrl: "/audio/test2.wav",
+                duration: 3.0,
+                timestamp: new Date().toISOString()
+            }
+        ];
+        
+        localStorage.setItem('chunks', JSON.stringify(testChunks));
+        console.log('Test data added to localStorage');
+    </script>
+</body>
+</html>

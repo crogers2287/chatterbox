@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Chatterbox API</title>
+</head>
+<body>
+  <h1>Test Chatterbox API</h1>
+  <button onclick="testAPI()">Test Synthesize</button>
+  <div id="result"></div>
+  
+  <script>
+    async function testAPI() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Testing...';
+      
+      try {
+        const response = await fetch('http://localhost:6093/synthesize-json', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: 'Hello from the browser',
+            exaggeration: 0.5,
+            temperature: 0.8,
+            cfg_weight: 0.5,
+            min_p: 0.05,
+            top_p: 1.0,
+            repetition_penalty: 1.2,
+            speech_rate: 1.0
+          })
+        });
+        
+        const data = await response.json();
+        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        
+        if (data.success && data.audio_url) {
+          const audioUrl = `http://localhost:6093${data.audio_url}`;
+          resultDiv.innerHTML += `<br><audio controls src="${audioUrl}"></audio>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `Error: ${error.message}`;
+        console.error('Full error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

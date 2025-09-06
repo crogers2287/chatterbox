@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Audio Combiner</title>
+    <script>
+        // Create test chunks in localStorage
+        const testChunks = [
+            {
+                id: "test1",
+                text: "This is the first test audio file for concatenation.",
+                status: "completed",
+                audioUrl: "/audio/57235534-86b0-4ae7-b8af-6d9469128c2d.wav"
+            },
+            {
+                id: "test2", 
+                text: "This is the second test audio file for concatenation.",
+                status: "completed",
+                audioUrl: "/audio/f83eaef3-f43a-4057-9efa-8452559b6b58.wav"
+            }
+        ];
+        
+        localStorage.setItem('chunks', JSON.stringify(testChunks));
+        
+        // Redirect to audio combiner
+        window.location.href = '/audio-combiner.html';
+    </script>
+</head>
+<body>
+    <p>Setting up test data and redirecting...</p>
+</body>
+</html>

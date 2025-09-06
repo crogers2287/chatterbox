@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Audio Network Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .result { margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 5px; }
+        .error { background: #ffe0e0; }
+        .success { background: #e0ffe0; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Debug Audio Generation Network Issue</h1>
+    
+    <button onclick="testDirectAPI()">Test Direct API Call</button>
+    <button onclick="testWithAxios()">Test with Axios</button>
+    <button onclick="testCORS()">Test CORS</button>
+    
+    <div id="result"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const API_URL = 'http://fred.taile5e8a3.ts.net:6093';
+        
+        function showResult(title, content, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result ${isError ? 'error' : 'success'}">
+                    <h3>${title}</h3>
+                    <pre>${content}</pre>
+                </div>
+            `;
+        }
+        
+        async function testDirectAPI() {
+            try {
+                console.log('Testing direct API call to:', API_URL);
+                showResult('Testing...', 'Making request to ' + API_URL + '/synthesize-json');
+                
+                const response = await fetch(API_URL + '/synthesize-json', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'Testing network connectivity',
+                        exaggeration: 0.5,
+                        temperature: 0.8,
+                        cfg_weight: 0.5,
+                        min_p: 0.05,
+                        top_p: 1.0,
+                        repetition_penalty: 1.2,
+                        speech_rate: 1.0
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    showResult('Success!', JSON.stringify(data, null, 2));
+                } else {
+                    showResult('API Error', JSON.stringify(data, null, 2), true);
+                }
+                
+            } catch (error) {
+                console.error('Direct API Error:', error);
+                showResult('Network Error', `${error.name}: ${error.message}\n\nThis usually means:\n1. CORS is blocking the request\n2. The API is not reachable\n3. Network/firewall issue`, true);
+            }
+        }
+        
+        async function testWithAxios() {
+            try {
+                console.log('Testing with Axios to:', API_URL);
+                showResult('Testing...', 'Making Axios request to ' + API_URL + '/synthesize-json');
+                
+                const response = await axios.post(API_URL + '/synthesize-json', {
+                    text: 'Testing with Axios',
+                    exaggeration: 0.5,
+                    temperature: 0.8,
+                    cfg_weight: 0.5,
+                    min_p: 0.05,
+                    top_p: 1.0,
+                    repetition_penalty: 1.2,
+                    speech_rate: 1.0
+                });
+                
+                console.log('Axios Response:', response.data);
+                showResult('Axios Success!', JSON.stringify(response.data, null, 2));
+                
+            } catch (error) {
+                console.error('Axios Error:', error);
+                let errorMsg = `${error.name}: ${error.message}`;
+                
+                if (error.response) {
+                    errorMsg += `\n\nResponse Status: ${error.response.status}`;
+                    errorMsg += `\nResponse Data: ${JSON.stringify(error.response.data)}`;
+                } else if (error.request) {
+                    errorMsg += '\n\nNo response received - possible CORS or network issue';
+                }
+                
+                showResult('Axios Error', errorMsg, true);
+            }
+        }
+        
+        async function testCORS() {
+            try {
+                console.log('Testing CORS headers...');
+                showResult('Testing...', 'Checking CORS configuration');
+                
+                // First try OPTIONS request
+                const optionsResponse = await fetch(API_URL + '/synthesize-json', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'access-control-allow-origin': optionsResponse.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': optionsResponse.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': optionsResponse.headers.get('access-control-allow-headers'),
+                    'access-control-allow-credentials': optionsResponse.headers.get('access-control-allow-credentials')
+                };
+                
+                showResult('CORS Headers', JSON.stringify(corsHeaders, null, 2));
+                
+            } catch (error) {
+                console.error('CORS Test Error:', error);
+                showResult('CORS Test Failed', error.message, true);
+            }
+        }
+        
+        // Test on page load
+        window.onload = () => {
+            console.log('Page loaded. Current origin:', window.location.origin);
+            console.log('Target API:', API_URL);
+        };
+    </script>
+</body>
+</html>

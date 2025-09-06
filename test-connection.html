@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chatterbox Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox TTS Connection Test</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        function logCode(title, code) {
+            const div = document.createElement('div');
+            div.innerHTML = `<h3>${title}</h3><pre>${JSON.stringify(code, null, 2)}</pre>`;
+            results.appendChild(div);
+        }
+        
+        async function testConnection() {
+            const endpoints = [
+                'http://localhost:6093',
+                'http://fred.taile5e8a3.ts.net:6093',
+                'http://localhost:6095',
+                'http://fred.taile5e8a3.ts.net:6095'
+            ];
+            
+            log('Testing API connections...', 'info');
+            
+            for (const endpoint of endpoints) {
+                try {
+                    log(`Testing ${endpoint}/health...`, 'info');
+                    
+                    const response = await fetch(`${endpoint}/health`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✓ ${endpoint} is accessible`, 'success');
+                        logCode(`${endpoint} response:`, data);
+                    } else {
+                        log(`✗ ${endpoint} returned ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log(`✗ ${endpoint} failed: ${error.message}`, 'error');
+                    if (error.message.includes('CORS')) {
+                        log('CORS error detected - API may need CORS configuration', 'error');
+                    }
+                }
+            }
+            
+            // Test synthesis endpoint
+            log('\nTesting synthesis endpoint...', 'info');
+            try {
+                const testEndpoint = 'http://fred.taile5e8a3.ts.net:6093';
+                const response = await fetch(`${testEndpoint}/synthesize-json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: 'Test connection',
+                        temperature: 0.8,
+                        exaggeration: 0.5,
+                    }),
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ Synthesis endpoint works`, 'success');
+                    logCode('Synthesis response:', data);
+                } else {
+                    const error = await response.text();
+                    log(`✗ Synthesis failed: ${response.status}`, 'error');
+                    log(`Error: ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ Synthesis test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Run tests when page loads
+        testConnection();
+    </script>
+</body>
+</html>

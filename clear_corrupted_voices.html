@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Corrupted Voices</title>
+</head>
+<body>
+    <h1>Clear Corrupted Voice Data</h1>
+    <button onclick="clearCorruptedVoices()">Clear Corrupted Voices</button>
+    <button onclick="clearAllVoices()">Clear ALL Voices</button>
+    <pre id="output"></pre>
+    
+    <script>
+        function clearCorruptedVoices() {
+            const key = 'chatterbox_saved_voices';
+            const saved = localStorage.getItem(key);
+            
+            if (saved) {
+                try {
+                    const voices = JSON.parse(saved);
+                    const validVoices = voices.filter(v => v && v.parameters);
+                    
+                    console.log('Found voices:', voices.length);
+                    console.log('Valid voices:', validVoices.length);
+                    console.log('Removed:', voices.length - validVoices.length, 'corrupted voices');
+                    
+                    localStorage.setItem(key, JSON.stringify(validVoices));
+                    
+                    document.getElementById('output').textContent = 
+                        `Cleaned up voices:\n` +
+                        `Original: ${voices.length}\n` +
+                        `Valid: ${validVoices.length}\n` +
+                        `Removed: ${voices.length - validVoices.length}`;
+                } catch (e) {
+                    console.error('Error cleaning voices:', e);
+                    document.getElementById('output').textContent = 'Error: ' + e.message;
+                }
+            } else {
+                document.getElementById('output').textContent = 'No saved voices found';
+            }
+        }
+        
+        function clearAllVoices() {
+            if (confirm('This will delete ALL saved voices. Are you sure?')) {
+                localStorage.removeItem('chatterbox_saved_voices');
+                localStorage.removeItem('savedVoices');
+                document.getElementById('output').textContent = 'All voices cleared';
+            }
+        }
+    </script>
+</body>
+</html>

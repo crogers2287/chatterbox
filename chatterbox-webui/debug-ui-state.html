@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatterbox UI Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Chatterbox UI State Debugger</h1>
+    
+    <div class="section">
+        <h2>1. Environment Check</h2>
+        <div id="env-check"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. LocalStorage Data</h2>
+        <button onclick="checkStorage()">Refresh Storage Data</button>
+        <pre id="storage-data"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>3. API Connection Test</h2>
+        <button onclick="testAPI()">Test API Connection</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Test Synthesis</h2>
+        <textarea id="test-text" rows="3" style="width: 100%;">Hello, this is a test of the Chatterbox system.</textarea><br>
+        <button onclick="testSynthesis()">Generate Audio</button>
+        <div id="synthesis-result"></div>
+        <audio id="test-audio" controls style="display: none;"></audio>
+    </div>
+
+    <script>
+        // Check environment on load
+        window.onload = () => {
+            checkEnvironment();
+            checkStorage();
+        };
+        
+        function checkEnvironment() {
+            const envDiv = document.getElementById('env-check');
+            const checks = [];
+            
+            // Check if we're on localhost
+            checks.push(`Location: ${window.location.href}`);
+            checks.push(`Origin: ${window.location.origin}`);
+            
+            // Check if APIs are accessible
+            fetch('http://localhost:6095/health')
+                .then(r => r.json())
+                .then(data => {
+                    checks.push('<span class="success">✓ Load Balancer API: Connected</span>');
+                    checks.push(`  - Model loaded: ${data.model_loaded}`);
+                    checks.push(`  - GPU: ${data.gpu_name}`);
+                    envDiv.innerHTML = checks.join('<br>');
+                })
+                .catch(err => {
+                    checks.push('<span class="error">✗ Load Balancer API: ' + err.message + '</span>');
+                    envDiv.innerHTML = checks.join('<br>');
+                });
+        }
+        
+        function checkStorage() {
+            const storageDiv = document.getElementById('storage-data');
+            const data = {
+                chunks: localStorage.getItem('chunks'),
+                ttsParameters: localStorage.getItem('ttsParameters'),
+                sessions: localStorage.getItem('sessions'),
+                currentSession: localStorage.getItem('currentSession'),
+                voiceReference: localStorage.getItem('voiceReference')
+            };
+            
+            // Parse and display
+            const output = [];
+            for (const [key, value] of Object.entries(data)) {
+                if (value) {
+                    try {
+                        const parsed = JSON.parse(value);
+                        output.push(`${key}: ${JSON.stringify(parsed, null, 2)}`);
+                    } catch {
+                        output.push(`${key}: ${value}`);
+                    }
+                } else {
+                    output.push(`${key}: <empty>`);
+                }
+            }
+            
+            storageDiv.textContent = output.join('\n\n');
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Testing API endpoints...</p>';
+            
+            const tests = [
+                { url: 'http://localhost:6095/health', name: 'Health Check' },
+                { url: 'http://localhost:6095/', name: 'API Info' },
+                { url: 'http://localhost:6095/models/info', name: 'Model Info' }
+            ];
+            
+            const results = [];
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    results.push(`<div class="success">✓ ${test.name}: ${JSON.stringify(data)}</div>`);
+                } catch (err) {
+                    results.push(`<div class="error">✗ ${test.name}: ${err.message}</div>`);
+                }
+            }
+            
+            resultDiv.innerHTML = results.join('');
+        }
+        
+        async function testSynthesis() {
+            const text = document.getElementById('test-text').value;
+            const resultDiv = document.getElementById('synthesis-result');
+            const audioEl = document.getElementById('test-audio');
+            
+            resultDiv.innerHTML = '<p>Generating...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:6095/synthesize-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        speed: 1.0,
+                        temperature: 0.3,
+                        top_k: 20,
+                        top_p: 0.9
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="success">✓ Audio generated successfully!<br>
+                        Duration: ${data.duration}s<br>
+                        Inference speed: ${data.inference_speed?.toFixed(2)} it/s</div>`;
+                    
+                    // Play audio
+                    audioEl.src = `http://localhost:6095${data.audio_url}`;
+                    audioEl.style.display = 'block';
+                    audioEl.play();
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ Generation failed: ${data.message}</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">✗ Request failed: ${err.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

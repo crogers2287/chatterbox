@@ -1,0 +1,7 @@
+[Unit]
+Description=Chatterbox TTS Backend Services
+Documentation=https://github.com/resemble-ai/chatterbox
+Wants=chatterbox-gpu0.service chatterbox-gpu1.service chatterbox-loadbalancer.service
+
+[Install]
+WantedBy=multi-user.target

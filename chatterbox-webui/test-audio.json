@@ -1,0 +1,1 @@
+{"success":true,"message":"Speech synthesized successfully","audio_url":"/audio/tmpruqwyhu4.wav","duration":1.56,"sample_rate":24000,"parameters":{"text":"Test audio generation","exaggeration":0.5,"temperature":0.8,"cfg_weight":0.5,"min_p":0.05,"top_p":1.0,"repetition_penalty":1.2,"seed":null}}

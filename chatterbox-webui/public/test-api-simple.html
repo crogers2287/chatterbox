@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Simple API Connection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        async function test() {
+            // Test 1: Direct /api/health
+            try {
+                const r1 = await fetch('/api/health');
+                const d1 = await r1.json();
+                results.innerHTML += '<div class="success">✓ /api/health works</div>';
+                results.innerHTML += '<pre>' + JSON.stringify(d1, null, 2) + '</pre>';
+            } catch (e) {
+                results.innerHTML += '<div class="error">✗ /api/health failed: ' + e.message + '</div>';
+            }
+            
+            // Test 2: Voices endpoint
+            try {
+                const r2 = await fetch('/api/voices');
+                const d2 = await r2.json();
+                results.innerHTML += '<div class="success">✓ /api/voices works</div>';
+                results.innerHTML += '<pre>Voices count: ' + (d2.voices?.length || 0) + '</pre>';
+            } catch (e) {
+                results.innerHTML += '<div class="error">✗ /api/voices failed: ' + e.message + '</div>';
+            }
+            
+            // Test 3: Simple synthesis
+            try {
+                const r3 = await fetch('/api/synthesize-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: 'Test', temperature: 0.8 })
+                });
+                const d3 = await r3.json();
+                results.innerHTML += '<div class="success">✓ /api/synthesize-json works</div>';
+                results.innerHTML += '<pre>Audio URL: ' + d3.audio_url + '</pre>';
+            } catch (e) {
+                results.innerHTML += '<div class="error">✗ /api/synthesize-json failed: ' + e.message + '</div>';
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

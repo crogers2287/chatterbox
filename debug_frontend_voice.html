@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Voice Synthesis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .error { color: #d32f2f; }
+        .success { color: #388e3c; }
+        .info { color: #1976d2; }
+    </style>
+</head>
+<body>
+    <h1>Debug Voice Synthesis</h1>
+    
+    <div class="section">
+        <h2>1. Check API Connection</h2>
+        <button onclick="checkAPI()">Check API</button>
+        <div id="apiResult" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Check Saved Voices</h2>
+        <button onclick="checkVoices()">Get Voices</button>
+        <div id="voicesResult" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Test Voice Loading</h2>
+        <select id="voiceSelect">
+            <option value="">Select a voice...</option>
+        </select>
+        <button onclick="loadVoiceFile()">Load Voice File</button>
+        <div id="voiceLoadResult" class="log"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Test Synthesis</h2>
+        <textarea id="testText" rows="3" style="width: 100%">This is a test to verify voice cloning is working correctly.</textarea><br>
+        <button onclick="testWithoutVoice()">Test WITHOUT Voice</button>
+        <button onclick="testWithVoice()">Test WITH Voice</button>
+        <div id="synthesisResult" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:6093';
+        let loadedVoiceFile = null;
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            element.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+        }
+        
+        async function checkAPI() {
+            log('apiResult', 'Checking API connection...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                log('apiResult', `API is ${data.status}, GPU: ${data.gpu_name || 'Not available'}`, 'success');
+            } catch (error) {
+                log('apiResult', `Failed to connect: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkVoices() {
+            log('voicesResult', 'Fetching saved voices...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/voices`);
+                const data = await response.json();
+                const voices = data.voices || [];
+                
+                log('voicesResult', `Found ${voices.length} saved voices`, 'success');
+                
+                // Populate select
+                const select = document.getElementById('voiceSelect');
+                select.innerHTML = '<option value="">Select a voice...</option>';
+                
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.id})`;
+                    select.appendChild(option);
+                    
+                    const hasAudio = voice.voiceReferenceUrl || voice.voiceReferenceData || voice.voiceReferenceFile;
+                    log('voicesResult', `Voice: ${voice.name} - Has audio: ${hasAudio ? 'YES' : 'NO'}`, hasAudio ? 'success' : 'info');
+                });
+                
+            } catch (error) {
+                log('voicesResult', `Failed to fetch voices: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadVoiceFile() {
+            const voiceId = document.getElementById('voiceSelect').value;
+            if (!voiceId) {
+                log('voiceLoadResult', 'Please select a voice', 'error');
+                return;
+            }
+            
+            log('voiceLoadResult', `Loading audio for voice: ${voiceId}`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/voices/${voiceId}/audio`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const blob = await response.blob();
+                loadedVoiceFile = new File([blob], `voice-${voiceId}.wav`, { type: 'audio/wav' });
+                
+                log('voiceLoadResult', `Voice audio loaded: ${loadedVoiceFile.size} bytes`, 'success');
+                log('voiceLoadResult', `File name: ${loadedVoiceFile.name}, Type: ${loadedVoiceFile.type}`, 'info');
+                
+                // Create audio element to play
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.controls = true;
+                document.getElementById('voiceLoadResult').appendChild(audio);
+                
+            } catch (error) {
+                log('voiceLoadResult', `Failed to load voice audio: ${error.message}`, 'error');
+                loadedVoiceFile = null;
+            }
+        }
+        
+        async function testWithoutVoice() {
+            const text = document.getElementById('testText').value;
+            log('synthesisResult', '\\n--- Testing WITHOUT voice file ---', 'info');
+            
+            try {
+                const startTime = performance.now();
+                
+                const response = await fetch(`${API_BASE}/synthesize-json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        exaggeration: 0.7,
+                        temperature: 0.9,
+                        cfg_weight: 0.6,
+                        seed: 42
+                    })
+                });
+                
+                const data = await response.json();
+                const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+                
+                if (data.success) {
+                    log('synthesisResult', `Success! Generated in ${duration}s`, 'success');
+                    log('synthesisResult', `Audio URL: ${data.audio_url}`, 'info');
+                    
+                    // Create audio player
+                    const audio = new Audio(`${API_BASE}${data.audio_url}`);
+                    audio.controls = true;
+                    document.getElementById('synthesisResult').appendChild(audio);
+                } else {
+                    log('synthesisResult', `Failed: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                log('synthesisResult', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testWithVoice() {
+            if (!loadedVoiceFile) {
+                log('synthesisResult', 'Please load a voice file first', 'error');
+                return;
+            }
+            
+            const text = document.getElementById('testText').value;
+            log('synthesisResult', '\\n--- Testing WITH voice file ---', 'info');
+            log('synthesisResult', `Using voice file: ${loadedVoiceFile.name} (${loadedVoiceFile.size} bytes)`, 'info');
+            
+            try {
+                const startTime = performance.now();
+                
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('exaggeration', '0.7');
+                formData.append('temperature', '0.9');
+                formData.append('cfg_weight', '0.6');
+                formData.append('seed', '42');
+                formData.append('audio_prompt', loadedVoiceFile);
+                
+                // Log what we're sending
+                for (let [key, value] of formData.entries()) {
+                    if (value instanceof File) {
+                        log('synthesisResult', `FormData: ${key} = File(${value.name}, ${value.size} bytes)`, 'info');
+                    } else {
+                        log('synthesisResult', `FormData: ${key} = ${value}`, 'info');
+                    }
+                }
+                
+                const response = await fetch(`${API_BASE}/synthesize`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+                
+                if (data.success) {
+                    log('synthesisResult', `Success! Generated in ${duration}s`, 'success');
+                    log('synthesisResult', `Audio URL: ${data.audio_url}`, 'info');
+                    log('synthesisResult', `Voice cloning should take longer than regular synthesis`, 'info');
+                    
+                    // Create audio player
+                    const audio = new Audio(`${API_BASE}${data.audio_url}`);
+                    audio.controls = true;
+                    document.getElementById('synthesisResult').appendChild(audio);
+                } else {
+                    log('synthesisResult', `Failed: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                log('synthesisResult', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        checkAPI();
+        checkVoices();
+    </script>
+</body>
+</html>

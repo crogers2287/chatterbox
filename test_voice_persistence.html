@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Persistence Test</title>
+    <script>
+        // Test voice persistence
+        function testVoicePersistence() {
+            const testVoice = {
+                id: 'test-voice-123',
+                name: 'Test Voice',
+                parameters: {
+                    exaggeration: 0.5,
+                    temperature: 0.8,
+                    cfg_weight: 0.5,
+                    min_p: 0.05,
+                    top_p: 1.0,
+                    repetition_penalty: 1.2,
+                    seed: 42,
+                    speech_rate: 1.0
+                },
+                voiceReferenceData: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAAB...',
+                createdAt: new Date()
+            };
+            
+            // Test 1: Save to localStorage
+            console.log('Test 1: Saving voice to localStorage');
+            const voices = [testVoice];
+            localStorage.setItem('chatterbox_saved_voices', JSON.stringify(voices));
+            console.log('Saved:', localStorage.getItem('chatterbox_saved_voices'));
+            
+            // Test 2: Load from localStorage
+            console.log('\nTest 2: Loading from localStorage');
+            const loaded = localStorage.getItem('chatterbox_saved_voices');
+            const parsed = JSON.parse(loaded);
+            console.log('Loaded:', parsed);
+            
+            // Test 3: Check if it persists
+            console.log('\nTest 3: Check persistence');
+            console.log('Keys in localStorage:', Object.keys(localStorage));
+            console.log('chatterbox_saved_voices exists:', localStorage.getItem('chatterbox_saved_voices') !== null);
+            
+            document.getElementById('result').innerText = 'Check browser console for results';
+        }
+        
+        function clearVoices() {
+            localStorage.removeItem('chatterbox_saved_voices');
+            localStorage.removeItem('savedVoices');
+            console.log('Cleared voice storage');
+            document.getElementById('result').innerText = 'Cleared voice storage';
+        }
+        
+        function checkStorage() {
+            const oldKey = localStorage.getItem('savedVoices');
+            const newKey = localStorage.getItem('chatterbox_saved_voices');
+            
+            const result = {
+                oldKey: oldKey ? JSON.parse(oldKey) : null,
+                newKey: newKey ? JSON.parse(newKey) : null,
+                allKeys: Object.keys(localStorage)
+            };
+            
+            console.log('Storage check:', result);
+            document.getElementById('result').innerText = JSON.stringify(result, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h1>Voice Persistence Test</h1>
+    <button onclick="testVoicePersistence()">Test Voice Save/Load</button>
+    <button onclick="clearVoices()">Clear Voices</button>
+    <button onclick="checkStorage()">Check Storage</button>
+    <pre id="result"></pre>
+</body>
+</html>

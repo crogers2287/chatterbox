@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Archive Functionality</title>
+</head>
+<body>
+    <h1>Testing Archive Functionality</h1>
+    <p>This page will add test data and redirect to the archive page.</p>
+    
+    <script>
+        // Add comprehensive test data
+        const testSession = {
+            id: 'session_2025-08-31',
+            name: 'Session Aug 31, 2025',
+            date: '2025-08-31T22:00:00.000Z',
+            items: [
+                {
+                    id: 'audio_test_001',
+                    text: 'This is the first test audio file for the archive page demonstration.',
+                    audioUrl: '/audio/test1.wav',
+                    audioData: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIAuAAABAAgAZGF0YQAAAAA=',
+                    duration: 3.2,
+                    timestamp: '2025-08-31T21:30:00.000Z',
+                    parameters: {
+                        temperature: 0.8,
+                        cfg_weight: 0.5,
+                        min_p: 0.05
+                    },
+                    voiceName: 'Default Voice'
+                },
+                {
+                    id: 'audio_test_002', 
+                    text: 'Here is another test audio file to demonstrate the selection and combination features.',
+                    audioUrl: '/audio/test2.wav',
+                    audioData: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIAuAAABAAgAZGF0YQAAAAA=',
+                    duration: 4.1,
+                    timestamp: '2025-08-31T21:35:00.000Z',
+                    parameters: {
+                        temperature: 0.9,
+                        cfg_weight: 0.4,
+                        min_p: 0.06
+                    },
+                    voiceName: 'Custom Voice'
+                },
+                {
+                    id: 'audio_test_003',
+                    text: 'This third audio file will help test the batch operations and export functionality.',
+                    audioUrl: '/audio/test3.wav',
+                    audioData: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIAuAAABAAgAZGF0YQAAAAA=',
+                    duration: 2.8,
+                    timestamp: '2025-08-31T21:40:00.000Z',
+                    parameters: {
+                        temperature: 0.7,
+                        cfg_weight: 0.6,
+                        min_p: 0.04
+                    },
+                    voiceName: 'Test Voice'
+                }
+            ]
+        };
+        
+        // Add test session to archive
+        const archiveData = {
+            sessions: {
+                'session_2025-08-31': testSession
+            },
+            lastUpdated: new Date().toISOString()
+        };
+        
+        localStorage.setItem('chatterbox_archive', JSON.stringify(archiveData));
+        
+        // Also add to chunks for compatibility
+        const chunks = testSession.items.map(item => ({
+            id: item.id,
+            text: item.text,
+            status: 'completed',
+            audioUrl: item.audioUrl,
+            audioData: item.audioData,
+            duration: item.duration,
+            timestamp: item.timestamp,
+            parameters: item.parameters
+        }));
+        
+        localStorage.setItem('chunks', JSON.stringify(chunks));
+        
+        console.log('Test data added to localStorage');
+        console.log('Archive data:', archiveData);
+        console.log('Chunks data:', chunks);
+        
+        // Redirect to archive page after a moment
+        setTimeout(() => {
+            window.location.href = '/archive.html';
+        }, 1000);
+    </script>
+</body>
+</html>

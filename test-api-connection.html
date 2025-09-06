@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Connection</title>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <div id="status"></div>
+    <button onclick="testAPI()">Test API</button>
+    <button onclick="testVoices()">Test Voices</button>
+    <button onclick="saveTestVoice()">Save Test Voice</button>
+    
+    <script>
+        const API_URL = 'http://fred.taile5e8a3.ts.net:6093';
+        const statusDiv = document.getElementById('status');
+        
+        async function testAPI() {
+            try {
+                statusDiv.innerHTML = 'Testing API health...';
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                statusDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+        
+        async function testVoices() {
+            try {
+                statusDiv.innerHTML = 'Fetching voices...';
+                const response = await fetch(`${API_URL}/voices`);
+                const data = await response.json();
+                statusDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+        
+        async function saveTestVoice() {
+            try {
+                statusDiv.innerHTML = 'Saving test voice...';
+                const response = await fetch(`${API_URL}/voices`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Browser Test Voice',
+                        parameters: {
+                            exaggeration: 0.5,
+                            temperature: 0.8,
+                            cfg_weight: 0.5,
+                            min_p: 0.05,
+                            top_p: 1.0,
+                            repetition_penalty: 1.2,
+                            seed: 99999,
+                            speech_rate: 1.0
+                        }
+                    })
+                });
+                const data = await response.json();
+                statusDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

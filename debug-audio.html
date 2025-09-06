@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Audio Generation</title>
+</head>
+<body>
+  <h1>Debug Audio Generation</h1>
+  
+  <div>
+    <label>Text: <input type="text" id="text" value="Hello world" /></label><br>
+    <button onclick="testDirect()">Test Direct API</button>
+    <button onclick="testViaApp()">Test Via App API</button>
+  </div>
+  
+  <div id="result"></div>
+  
+  <script>
+    // Test direct API call
+    async function testDirect() {
+      const text = document.getElementById('text').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Testing direct API...';
+      
+      try {
+        const response = await fetch('http://localhost:6093/synthesize-json', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            exaggeration: 0.5,
+            temperature: 0.8,
+            cfg_weight: 0.5,
+            min_p: 0.05,
+            top_p: 1.0,
+            repetition_penalty: 1.2,
+            speech_rate: 1.0
+          })
+        });
+        
+        const data = await response.json();
+        console.log('Direct API response:', data);
+        
+        if (data.success && data.audio_url) {
+          const audioUrl = `http://localhost:6093${data.audio_url}`;
+          resultDiv.innerHTML = `
+            <h3>Success!</h3>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+            <audio controls src="${audioUrl}"></audio>
+          `;
+        } else {
+          resultDiv.innerHTML = `<h3>Failed</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<h3>Error</h3><pre>${error.message}</pre>`;
+        console.error('Direct API error:', error);
+      }
+    }
+    
+    // Test via app's API wrapper
+    async function testViaApp() {
+      const text = document.getElementById('text').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Testing via app API...';
+      
+      try {
+        // Import the API module
+        const module = await import('http://localhost:5173/src/lib/api.ts');
+        const { chatterboxAPI } = module;
+        
+        const response = await chatterboxAPI.synthesize({
+          text: text,
+          exaggeration: 0.5,
+          temperature: 0.8,
+          cfg_weight: 0.5,
+          min_p: 0.05,
+          top_p: 1.0,
+          repetition_penalty: 1.2,
+          seed: null,
+          speech_rate: 1.0
+        });
+        
+        console.log('App API response:', response);
+        
+        if (response.success && response.audio_url) {
+          const audioUrl = chatterboxAPI.getAudioUrl(response.audio_url);
+          resultDiv.innerHTML = `
+            <h3>Success!</h3>
+            <pre>${JSON.stringify(response, null, 2)}</pre>
+            <p>Full URL: ${audioUrl}</p>
+            <audio controls src="${audioUrl}"></audio>
+          `;
+        } else {
+          resultDiv.innerHTML = `<h3>Failed</h3><pre>${JSON.stringify(response, null, 2)}</pre>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<h3>Error</h3><pre>${error.message}</pre>`;
+        console.error('App API error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

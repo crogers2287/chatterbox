@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>Testing CORS to Chatterbox API</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <pre id="result"></pre>
+    
+    <script>
+        async function testAPI() {
+            const resultElement = document.getElementById('result');
+            try {
+                const response = await fetch('http://localhost:6093/health');
+                const data = await response.json();
+                resultElement.textContent = 'Success!\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultElement.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

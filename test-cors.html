@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CORS</title>
+</head>
+<body>
+    <h1>Test CORS for Chatterbox API</h1>
+    <button onclick="testCORS()">Test CORS</button>
+    <div id="result"></div>
+
+    <script>
+    async function testCORS() {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '<p>Testing...</p>';
+        
+        try {
+            console.log('Making request to http://localhost:6093/synthesize-json');
+            
+            const response = await fetch('http://localhost:6093/synthesize-json', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: 'Testing CORS',
+                    exaggeration: 0.5,
+                    temperature: 0.8,
+                    cfg_weight: 0.5,
+                    min_p: 0.05,
+                    top_p: 1.0,
+                    repetition_penalty: 1.2,
+                    speech_rate: 1.0
+                })
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            resultDiv.innerHTML = `
+                <h3>Success!</h3>
+                <p>Status: ${response.status}</p>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+        } catch (error) {
+            console.error('CORS test failed:', error);
+            resultDiv.innerHTML = `
+                <h3>Error!</h3>
+                <p>${error.message}</p>
+                <p>Check browser console for details</p>
+            `;
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Production builds
+chatterbox-webui/build/
+chatterbox-webui/dist/
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test output
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+test-results/
+playwright-report/
+test-screenshots/
+
+# Audio files
+*.wav
+*.mp3
+*.m4a
+*.flac
+saved_voices/audio_files/
+
+# Model checkpoints
+*.pth
+*.pt
+*.onnx
+*.safetensors
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# PM system local state
+.claude/epics/*/updates/
+
+# Service PIDs
+*.pid

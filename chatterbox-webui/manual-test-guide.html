@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatterbox TTS Manual Test Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        h2 { 
+            color: #555; 
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .test-step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .test-step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .expected {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .working { background: #4caf50; color: white; }
+        .fixed { background: #ff9800; color: white; }
+        .pending { background: #2196f3; color: white; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Chatterbox TTS Manual Testing Guide</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Pre-Test Setup:</strong> Ensure the frontend is using localhost URLs:
+            <div class="code">
+# Check .env file:
+VITE_API_URL=http://localhost:6095
+VITE_BYPASS_AUTH=true
+            </div>
+        </div>
+
+        <h2>Test Status Summary</h2>
+        <p>
+            <span class="status working">✅ WORKING</span> API Connectivity (Port 6095)<br>
+            <span class="status fixed">🔧 FIXED</span> Frontend Configuration<br>
+            <span class="status pending">🔄 TEST</span> Parallel Generation<br>
+            <span class="status pending">🔄 TEST</span> Auto-Play<br>
+            <span class="status pending">🔄 TEST</span> Session Persistence
+        </p>
+
+        <h2>Manual Test Steps</h2>
+
+        <div class="test-step">
+            <h3>1. Initial Load Test</h3>
+            <p>Open <a href="http://localhost:5173" target="_blank">http://localhost:5173</a> in a new tab</p>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>Page loads without errors</li>
+                    <li>Text input area is visible</li>
+                    <li>No console errors (check DevTools)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>2. Add Text Chunks</h3>
+            <p>Add these test chunks one by one:</p>
+            <div class="code">
+Chunk 1: "Hello, this is the first test chunk."
+Chunk 2: "This is the second chunk with different content."
+Chunk 3: "And finally, the third chunk completes our test."
+            </div>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>Each chunk appears in the playlist</li>
+                    <li>Chunks show "pending" status (gray circle)</li>
+                    <li>Regenerate button (↻) visible for each chunk</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>3. Test Single Generation</h3>
+            <p>Click the regenerate button (↻) on the first chunk only</p>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>Spinner appears (generating status)</li>
+                    <li>Green checkmark when complete</li>
+                    <li>Play and download buttons appear</li>
+                    <li>Generation takes 2-5 seconds</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>4. Test Parallel Generation</h3>
+            <p>Click "Generate All" or "Generate Remaining" button in the header</p>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>Multiple chunks show spinners simultaneously</li>
+                    <li>Up to 2 chunks process in parallel</li>
+                    <li>Cancel button appears during generation</li>
+                    <li>All chunks complete with green checkmarks</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>5. Test Auto-Play</h3>
+            <p>During batch generation, audio should play automatically</p>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>First completed chunk plays automatically</li>
+                    <li>Subsequent chunks play in order</li>
+                    <li>Play button shows pause icon during playback</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>6. Test Session Persistence</h3>
+            <p>After generating audio, refresh the page (F5)</p>
+            <div class="expected">
+                <strong>Expected:</strong>
+                <ul>
+                    <li>All chunks remain in playlist</li>
+                    <li>Generated audio is still playable</li>
+                    <li>Green checkmarks persist for completed chunks</li>
+                    <li>Audio plays without re-generation</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-step">
+            <h3>7. Network Monitoring</h3>
+            <p>Open DevTools Network tab and check API calls</p>
+            <div class="expected">
+                <strong>Expected API Calls:</strong>
+                <ul>
+                    <li><code>GET http://localhost:6095/health</code> - On page load</li>
+                    <li><code>POST http://localhost:6095/synthesize-json</code> - For each generation</li>
+                    <li><code>GET http://localhost:6095/audio/*.wav</code> - For audio playback</li>
+                    <li>NO calls to port 6093 or 6094 directly</li>
+                    <li>NO calls to fred.taile5e8a3.ts.net</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Quick API Tests</h2>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <button onclick="testSynthesis()">Test Synthesis</button>
+        <button onclick="checkLocalStorage()">Check LocalStorage</button>
+        
+        <div id="test-results" style="margin-top: 20px;"></div>
+
+        <h2>Troubleshooting</h2>
+        <div class="test-step">
+            <h3>If API calls fail:</h3>
+            <ol>
+                <li>Check if load balancer is running: <code>curl http://localhost:6095/health</code></li>
+                <li>Check GPU servers: ports 6093 and 6094</li>
+                <li>Verify .env file has correct URLs</li>
+                <li>Restart frontend: <code>npm run dev</code></li>
+            </ol>
+        </div>
+
+        <div class="test-step">
+            <h3>If audio doesn't persist:</h3>
+            <ol>
+                <li>Check browser console for localStorage errors</li>
+                <li>Verify audio data is being saved as base64</li>
+                <li>Check localStorage size limits</li>
+            </ol>
+        </div>
+
+    </div>
+
+    <script>
+        function showResult(message, isSuccess = true) {
+            const resultsDiv = document.getElementById('test-results');
+            const color = isSuccess ? 'green' : 'red';
+            resultsDiv.innerHTML = `<div style="color: ${color}; padding: 10px; border: 1px solid ${color}; border-radius: 4px; margin-top: 10px;">${message}</div>`;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch('http://localhost:6095/health');
+                const data = await response.json();
+                showResult(`✅ Health Check Passed!<br>GPU: ${data.gpu_name}<br>Model Loaded: ${data.model_loaded}`);
+            } catch (error) {
+                showResult(`❌ Health Check Failed: ${error.message}`, false);
+            }
+        }
+
+        async function testSynthesis() {
+            try {
+                const response = await fetch('http://localhost:6095/synthesize-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: 'Quick API test',
+                        speed: 1.0,
+                        temperature: 0.3,
+                        top_k: 20,
+                        top_p: 0.9
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showResult(`✅ Synthesis Test Passed!<br>Audio: ${data.audio_url}<br>Duration: ${data.duration}s`);
+                } else {
+                    showResult(`❌ Synthesis Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                showResult(`❌ Synthesis Test Failed: ${error.message}`, false);
+            }
+        }
+
+        function checkLocalStorage() {
+            const chunks = localStorage.getItem('chunks');
+            const params = localStorage.getItem('ttsParameters');
+            let message = '<strong>LocalStorage Contents:</strong><br>';
+            
+            if (chunks) {
+                const chunksData = JSON.parse(chunks);
+                message += `Chunks: ${chunksData.length} stored<br>`;
+                const withAudio = chunksData.filter(c => c.audioData).length;
+                message += `With Audio: ${withAudio}<br>`;
+            } else {
+                message += 'No chunks stored<br>';
+            }
+            
+            if (params) {
+                message += 'TTS Parameters: Stored';
+            }
+            
+            showResult(message);
+        }
+    </script>
+</body>
+</html>
