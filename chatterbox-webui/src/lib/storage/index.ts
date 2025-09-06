@@ -13,6 +13,8 @@ export * from './types';
 export { IndexedDBAdapter } from './indexeddb-adapter';
 export { LocalStorageAdapter } from './localstorage-adapter';
 export { StorageManager, storageManager } from './storage-manager';
+export { RecoveryStorage, recoveryStorage, RecoveryUtils } from './recovery-utils';
+export type { RecoverySession, RecoveryMetadata } from './recovery-utils';
 
 // Re-export commonly used items for convenience
 export type {
