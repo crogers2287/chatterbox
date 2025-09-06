@@ -24,6 +24,9 @@ from chatterbox.tts import ChatterboxTTS
 from chatterbox.models.t3.modules.cond_enc import T3Cond
 from voice_storage import voice_storage
 
+# Recovery token support
+from recovery_endpoints import add_recovery_endpoints
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -163,6 +166,13 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Chatterbox TTS API Server (Fast Edition)...")
     await load_model()
+    
+    # Start recovery token cleanup task
+    import asyncio
+    from recovery_service import start_cleanup_task
+    asyncio.create_task(start_cleanup_task())
+    logger.info("Recovery token cleanup task started")
+    
     yield
     # Shutdown
     logger.info("Shutting down...")
@@ -184,6 +194,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add recovery endpoints
+add_recovery_endpoints(app)
 
 
 @app.get("/", response_model=Dict[str, str])
