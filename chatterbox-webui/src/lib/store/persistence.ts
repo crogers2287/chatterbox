@@ -3,7 +3,6 @@
  * Provides automatic state persistence, hydration, and migration support
  */
 
-import { StateCreator, StoreApi } from 'zustand';
 import { StorageAdapter, StorageError, StorageErrorCode } from '../storage/types';
 import { createStorageManager } from '../storage';
 
@@ -72,8 +71,8 @@ type PersistImpl = <
   B = T
 >(
   config: PersistConfig<T>,
-  storeApi: StateCreator<T & PersistState, [], [], A>,
-) => StateCreator<T & PersistState, [], [], A & PersistState>;
+  storeApi: any,
+) => any;
 
 // Global storage manager instance
 let globalStorage: StorageAdapter | null = null;
@@ -405,15 +404,15 @@ type Persist = <
   U extends Record<string, unknown>
 >(
   config: PersistConfig<T>,
-  storeApi: StateCreator<T, [], [], U>
-) => StateCreator<T & PersistState, [], [], U & PersistState>;
+  storeApi: any
+) => any;
 
 // Export the persist middleware
 export const persist = persistImpl as unknown as Persist;
 
 // Utility to create a persisted store
 export const createPersistedStore = <T extends Record<string, unknown>>(
-  storeCreator: StateCreator<T & PersistState>,
+  storeCreator: any,
   persistConfig: PersistConfig<T>
 ) => {
   return persist(persistConfig, storeCreator);
