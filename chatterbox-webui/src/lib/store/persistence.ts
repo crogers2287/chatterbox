@@ -3,7 +3,7 @@
  * Provides automatic state persistence, hydration, and migration support
  */
 
-import { StateCreator, StoreMutatorIdentifier, Mutate, StoreApi } from 'zustand';
+import { StateCreator, StoreApi } from 'zustand';
 import { StorageAdapter, StorageError, StorageErrorCode } from '../storage/types';
 import { createStorageManager } from '../storage';
 
