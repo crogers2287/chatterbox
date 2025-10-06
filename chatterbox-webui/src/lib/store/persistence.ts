@@ -460,6 +460,3 @@ export const createPersistedStore = <T extends Record<string, unknown>>(
 
 // Export commonly used types
 export type { StorageAdapter };
-
-// Re-export storage manager for convenience
-export { createStorageManager } from '../storage';
