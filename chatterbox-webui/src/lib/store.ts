@@ -4,8 +4,8 @@
  */
 
 // Re-export everything from the new persisted store
-export * from './store';
+export * from './store/index';
 
 // For backward compatibility, also export the main hook as default
-import { useStore } from './store';
+import { useStore } from './store/index';
 export default useStore;

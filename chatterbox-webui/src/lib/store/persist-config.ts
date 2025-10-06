@@ -214,12 +214,12 @@ export const sessionPersistConfig: PersistConfig<AppState> = {
 
 // Recovery config - for crash recovery scenarios
 export const recoveryPersistConfig: PersistConfig<AppState> = {
-  name: 'chatterbox-recovery',
+  name: 'chatterbox-recovery-state',
   version: 1,
-  
+
   partialize: (state) => ({
-    chunks: state.chunks?.filter(chunk => 
-      chunk.status === 'generating' || 
+    chunks: state.chunks?.filter(chunk =>
+      chunk.status === 'generating' ||
       (chunk.status === 'completed' && chunk.audioData)
     ),
     parameters: state.parameters,
@@ -227,12 +227,9 @@ export const recoveryPersistConfig: PersistConfig<AppState> = {
     isGenerating: state.isGenerating,
     currentGeneratingId: state.currentGeneratingId,
   }),
-  
+
   writeDelay: 1000, // Less frequent writes for recovery data
   compress: true,
-  
-  // Override storage key to separate from main persistence
-  name: 'chatterbox-recovery-state',
 };
 
 /**
