@@ -3,8 +3,23 @@
  * Provides automatic state persistence, hydration, and migration support
  */
 
-import { StorageAdapter, StorageError, StorageErrorCode } from '../storage/types';
-import { createStorageManager } from '../storage';
+// Storage interfaces - simplified for now without IndexedDB dependency
+interface StorageAdapter {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
+interface StorageError extends Error {
+  code: string;
+}
+
+const StorageErrorCode = {
+  NOT_AVAILABLE: 'NOT_AVAILABLE',
+  QUOTA_EXCEEDED: 'QUOTA_EXCEEDED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
 
 export interface PersistConfig<T> {
   /** Storage key name */
@@ -79,12 +94,37 @@ let globalStorage: StorageAdapter | null = null;
 
 const getStorage = (): StorageAdapter => {
   if (!globalStorage) {
-    globalStorage = createStorageManager({
-      dbName: 'chatterbox-state',
-      version: 1,
-      keyPrefix: 'persist:',
-      syncAcrossTabs: true,
-    });
+    // Simple localStorage adapter
+    globalStorage = {
+      async getItem(key: string): Promise<string | null> {
+        try {
+          return localStorage.getItem(key);
+        } catch {
+          return null;
+        }
+      },
+      async setItem(key: string, value: string): Promise<void> {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          console.warn('Failed to save to localStorage:', e);
+        }
+      },
+      async removeItem(key: string): Promise<void> {
+        try {
+          localStorage.removeItem(key);
+        } catch {
+          // Ignore errors
+        }
+      },
+      async clear(): Promise<void> {
+        try {
+          localStorage.clear();
+        } catch {
+          // Ignore errors
+        }
+      },
+    };
   }
   return globalStorage;
 };
